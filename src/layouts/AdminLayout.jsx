@@ -5,27 +5,26 @@ const menuItems = [
   { to: '/branches', label: 'Şubeler' },
   { to: '/courses', label: 'Dersler' },
   { to: '/teachers', label: 'Öğretmenler' },
-  // ileride: { to: '/teachers', label: 'Öğretmenler' },
-  // ileride: { to: '/constraints', label: 'Öğretmen Kısıtları' },
-  // ileride: { to: '/schedule', label: 'Program Oluşturucu' },
+  { to: '/constraints', label: 'Öğretmen Kısıtları' },
+  
 ]
 
 export default function AdminLayout() {
   const { profile, signOut } = useAuth()
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
-      <aside className="w-64 bg-slate-900 text-white flex flex-col">
-        <div className="p-4 text-lg font-bold border-b border-slate-700">
-          Haftalık Ders Programı
+    <div className="min-h-screen flex bg-slate-50">
+      <aside className="w-64 bg-[#0f172a] text-white flex flex-col">
+        <div className="p-5 text-lg font-bold border-b border-slate-700 flex items-center gap-2">
+          <span className="text-blue-400">📅</span> EduSchedule
         </div>
 
-        <nav className="flex-1 p-2 flex flex-col gap-1">
+        <nav className="flex-1 p-3 flex flex-col gap-1">
           {menuItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              className="px-3 py-2 rounded hover:bg-slate-700 transition-colors"
+              className="px-3 py-2.5 rounded-lg text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
             >
               {item.label}
             </Link>
@@ -36,7 +35,7 @@ export default function AdminLayout() {
           <p className="text-sm text-slate-300 mb-2">{profile?.full_name}</p>
           <button
             onClick={signOut}
-            className="w-full px-3 py-2 bg-red-500 hover:bg-red-600 rounded text-sm transition-colors"
+            className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-colors"
           >
             Çıkış Yap
           </button>
