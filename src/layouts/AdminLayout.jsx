@@ -5,6 +5,7 @@ export default function AdminLayout() {
   const { profile, signOut } = useAuth()
 
   const menuItems = [
+    { to: '/time-settings', label: 'Zaman Parametreleri' },
     { to: '/branches', label: 'Şubeler' },
     { to: '/courses', label: 'Dersler' },
     { to: '/teachers', label: 'Öğretmenler' },

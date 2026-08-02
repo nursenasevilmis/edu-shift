@@ -11,6 +11,7 @@ import ConstraintCalendar from './pages/ConstraintCalendar'
 import AssignmentManager from './pages/AssignmentManager'
 import ScheduleGrid from './pages/ScheduleGrid'
 import UserManager from './pages/UserManager'
+import TimeSettings from './pages/TimeSettings'
 
 function AppRoutes() {
   return (
@@ -34,6 +35,7 @@ function AppRoutes() {
         <Route path="assignments" element={<AssignmentManager />} />
         <Route path="schedule" element={<ScheduleGrid />} />
         <Route path="users" element={<UserManager />} />
+        <Route path="time-settings" element={<TimeSettings />} />
       </Route>
     </Routes>
   )

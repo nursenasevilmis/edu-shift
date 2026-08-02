@@ -1,35 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Button, Card } from '@heroui/react'
 import { supabase } from '../supabaseClient'
-
-const DAYS = [
-  { value: 1, label: 'Pazartesi' },
-  { value: 2, label: 'Salı' },
-  { value: 3, label: 'Çarşamba' },
-  { value: 4, label: 'Perşembe' },
-  { value: 5, label: 'Cuma' },
-]
-
-// Sabit ders saatleri (ileride Zaman Parametreleri ekranından dinamik gelecek)
-const PERIODS = [
-  { start: '08:30', end: '09:10' },
-  { start: '09:20', end: '10:00' },
-  { start: '10:10', end: '10:50' },
-  { start: '11:00', end: '11:40' },
-  { start: '11:50', end: '12:30' },
-  { start: '13:15', end: '13:55' },
-  { start: '14:05', end: '14:45' },
-  { start: '14:55', end: '15:35' },
-]
+import { DAYS } from '../utils/timeUtils'
 
 export default function ConstraintCalendar() {
   const [teachers, setTeachers] = useState([])
   const [selectedTeacher, setSelectedTeacher] = useState('')
+  const [timeSlots, setTimeSlots] = useState([])
   const [selectedCells, setSelectedCells] = useState(new Set())
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     fetchTeachers()
+    fetchTimeSlots()
   }, [])
 
   useEffect(() => {
@@ -39,11 +22,21 @@ export default function ConstraintCalendar() {
 
   async function fetchTeachers() {
     const { data, error } = await supabase.from('teachers').select('*').order('id')
-    if (error) console.error('Öğretmenler alınamadı:', error)
+    if (error) console.error(error)
     else {
       setTeachers(data)
       if (data.length > 0) setSelectedTeacher(String(data[0].id))
     }
+  }
+
+  async function fetchTimeSlots() {
+    const { data, error } = await supabase
+      .from('time_slots')
+      .select('*')
+      .order('day_of_week')
+      .order('period_number')
+    if (error) console.error(error)
+    else setTimeSlots(data)
   }
 
   async function fetchConstraints(teacherId) {
@@ -53,21 +46,28 @@ export default function ConstraintCalendar() {
       .eq('teacher_id', teacherId)
 
     if (error) {
-      console.error('Kısıtlar alınamadı:', error)
+      console.error(error)
       return
     }
 
-    // Veritabanındaki kısıtları hücre id'lerine çevir (day-startTime formatında)
     const cells = new Set()
     data.forEach((c) => {
-      const start = c.start_time.slice(0, 5) // "08:30:00" -> "08:30"
-      cells.add(`${c.day_of_week}-${start}`)
+      cells.add(`${c.day_of_week}-${c.start_time.slice(0, 5)}`)
     })
     setSelectedCells(cells)
   }
 
-  function toggleCell(day, period) {
-    const key = `${day}-${period.start}`
+  const maxPeriods = Math.max(
+    1,
+    ...DAYS.map((d) => timeSlots.filter((s) => s.day_of_week === d.value).length)
+  )
+
+  function getSlotFor(day, periodNumber) {
+    return timeSlots.find((s) => s.day_of_week === day && s.period_number === periodNumber)
+  }
+
+  function toggleCell(slot) {
+    const key = `${slot.day_of_week}-${slot.start_time.slice(0, 5)}`
     setSelectedCells((prev) => {
       const next = new Set(prev)
       if (next.has(key)) next.delete(key)
@@ -80,7 +80,6 @@ export default function ConstraintCalendar() {
     if (!selectedTeacher) return
     setLoading(true)
 
-    // Önce bu öğretmenin eski kısıtlarını sil
     const { error: deleteError } = await supabase
       .from('teacher_constraints')
       .delete()
@@ -92,24 +91,22 @@ export default function ConstraintCalendar() {
       return
     }
 
-    // Sonra işaretli hücreleri yeniden ekle
     const rows = Array.from(selectedCells).map((key) => {
       const [day, start] = key.split('-')
-      const period = PERIODS.find((p) => p.start === start)
+      const slot = timeSlots.find(
+        (s) => s.day_of_week === Number(day) && s.start_time.slice(0, 5) === start
+      )
       return {
         teacher_id: selectedTeacher,
         day_of_week: Number(day),
-        start_time: period.start,
-        end_time: period.end,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
         reason: 'Müsait değil',
       }
     })
 
     if (rows.length > 0) {
-      const { error: insertError } = await supabase
-        .from('teacher_constraints')
-        .insert(rows)
-
+      const { error: insertError } = await supabase.from('teacher_constraints').insert(rows)
       if (insertError) {
         alert('Hata: ' + insertError.message)
         setLoading(false)
@@ -133,9 +130,7 @@ export default function ConstraintCalendar() {
           className="border border-gray-300 rounded-lg px-3 py-2"
         >
           {teachers.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.full_name}
-            </option>
+            <option key={t.id} value={t.id}>{t.full_name}</option>
           ))}
         </select>
         <div className="flex items-center gap-4 ml-auto text-sm">
@@ -152,32 +147,35 @@ export default function ConstraintCalendar() {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th className="p-2 text-left w-24">Saat</th>
+              <th className="p-2 text-left w-32">Saat</th>
               {DAYS.map((d) => (
                 <th key={d.value} className="p-2 text-center">{d.label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {PERIODS.map((period) => (
-              <tr key={period.start}>
-                <td className="p-2 text-gray-500 whitespace-nowrap">
-                  {period.start} - {period.end}
-                </td>
+            {Array.from({ length: maxPeriods }, (_, i) => i + 1).map((periodNumber) => (
+              <tr key={periodNumber}>
+                <td className="p-2 text-gray-500 whitespace-nowrap">{periodNumber}. Ders</td>
                 {DAYS.map((d) => {
-                  const key = `${d.value}-${period.start}`
+                  const slot = getSlotFor(d.value, periodNumber)
+                  if (!slot) {
+                    return <td key={d.value} className="p-2 border bg-gray-100"></td>
+                  }
+                  const key = `${d.value}-${slot.start_time.slice(0, 5)}`
                   const isBlocked = selectedCells.has(key)
                   return (
                     <td
                       key={d.value}
-                      onClick={() => toggleCell(d.value, period)}
-                      className={`p-4 text-center border cursor-pointer select-none transition-colors ${
-                        isBlocked
-                          ? 'bg-red-200 hover:bg-red-300'
-                          : 'bg-green-100 hover:bg-green-200'
+                      onClick={() => toggleCell(slot)}
+                      className={`p-3 text-center border cursor-pointer select-none transition-colors ${
+                        isBlocked ? 'bg-red-200 hover:bg-red-300' : 'bg-green-100 hover:bg-green-200'
                       }`}
                     >
-                      {isBlocked ? 'Müsait Değil' : ''}
+                      <p className="text-[10px] text-gray-500">
+                        {slot.start_time.slice(0, 5)}-{slot.end_time.slice(0, 5)}
+                      </p>
+                      {isBlocked && <span className="text-xs">Müsait Değil</span>}
                     </td>
                   )
                 })}

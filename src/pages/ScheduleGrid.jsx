@@ -1,25 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card } from '@heroui/react'
 import { supabase } from '../supabaseClient'
-
-const DAYS = [
-  { value: 1, label: 'Pazartesi' },
-  { value: 2, label: 'Salı' },
-  { value: 3, label: 'Çarşamba' },
-  { value: 4, label: 'Perşembe' },
-  { value: 5, label: 'Cuma' },
-]
-
-const PERIODS = [
-  { start: '08:30', end: '09:10' },
-  { start: '09:20', end: '10:00' },
-  { start: '10:10', end: '10:50' },
-  { start: '11:00', end: '11:40' },
-  { start: '11:50', end: '12:30' },
-  { start: '13:15', end: '13:55' },
-  { start: '14:05', end: '14:45' },
-  { start: '14:55', end: '15:35' },
-]
+import { DAYS } from '../utils/timeUtils'
 
 export default function ScheduleGrid() {
   const [branches, setBranches] = useState([])
@@ -27,11 +9,12 @@ export default function ScheduleGrid() {
   const [assignments, setAssignments] = useState([])
   const [timeSlots, setTimeSlots] = useState([])
   const [scheduleEntries, setScheduleEntries] = useState([])
-  const [dragOverCell, setDragOverCell] = useState(null)
   const [constraints, setConstraints] = useState([])
+  const [dragOverCell, setDragOverCell] = useState(null)
+
   useEffect(() => {
     fetchBranches()
-    ensureTimeSlots()
+    fetchTimeSlots()
     fetchConstraints()
   }, [])
 
@@ -51,33 +34,20 @@ export default function ScheduleGrid() {
     }
   }
 
-  async function ensureTimeSlots() {
-    const { data: existing } = await supabase.from('time_slots').select('*')
-
-    if (existing && existing.length > 0) {
-      setTimeSlots(existing)
-      return
-    }
-
-    const rows = []
-    DAYS.forEach((day) => {
-      PERIODS.forEach((p, idx) => {
-        rows.push({
-          day_of_week: day.value,
-          period_number: idx + 1,
-          start_time: p.start,
-          end_time: p.end,
-        })
-      })
-    })
-
-    const { data: inserted, error } = await supabase
+  async function fetchTimeSlots() {
+    const { data, error } = await supabase
       .from('time_slots')
-      .insert(rows)
-      .select()
+      .select('*')
+      .order('day_of_week')
+      .order('period_number')
+    if (error) console.error(error)
+    else setTimeSlots(data)
+  }
 
-    if (error) console.error('Zaman dilimleri oluşturulamadı:', error)
-    else setTimeSlots(inserted)
+  async function fetchConstraints() {
+    const { data, error } = await supabase.from('teacher_constraints').select('*')
+    if (error) console.error(error)
+    else setConstraints(data)
   }
 
   async function fetchAssignments(branchId) {
@@ -85,7 +55,6 @@ export default function ScheduleGrid() {
       .from('course_assignments')
       .select('*, courses(course_name), teachers(full_name)')
       .eq('branch_id', branchId)
-
     if (error) console.error(error)
     else setAssignments(data)
   }
@@ -95,36 +64,34 @@ export default function ScheduleGrid() {
       .from('schedules')
       .select('*, course_assignments(*, courses(course_name), teachers(full_name))')
       .eq('branch_id', branchId)
-
     if (error) console.error(error)
     else setScheduleEntries(data)
   }
 
-  async function fetchConstraints() {
-    const { data, error } = await supabase.from('teacher_constraints').select('*')
-    if (error) console.error(error)
-    else setConstraints(data)
-  }
+  // Bir günün en fazla kaç period'u varsa, tabloyu o kadar satır göstereceğiz
+  const maxPeriods = Math.max(
+    1,
+    ...DAYS.map(
+      (d) => timeSlots.filter((s) => s.day_of_week === d.value).length
+    )
+  )
 
-  function findTimeSlot(day, period) {
+  function getSlotFor(day, periodNumber) {
     return timeSlots.find(
-      (ts) => ts.day_of_week === day && ts.start_time.slice(0, 5) === period.start
+      (s) => s.day_of_week === day && s.period_number === periodNumber
     )
   }
 
-  function findScheduleEntry(day, period) {
-    const slot = findTimeSlot(day, period)
-    if (!slot) return null
-    return scheduleEntries.find((s) => s.time_slot_id === slot.id)
+  function findScheduleEntry(slotId) {
+    return scheduleEntries.find((s) => s.time_slot_id === slotId)
   }
 
-  // --- Sürükleme başladığında hangi kartın taşındığını sakla ---
   function handleDragStart(e, assignment) {
     e.dataTransfer.setData('assignmentId', String(assignment.id))
   }
 
   function handleDragOver(e, cellKey) {
-    e.preventDefault() // bu olmadan drop tetiklenmez
+    e.preventDefault()
     setDragOverCell(cellKey)
   }
 
@@ -132,20 +99,14 @@ export default function ScheduleGrid() {
     setDragOverCell(null)
   }
 
-  async function handleDrop(e, day, period) {
+  async function handleDrop(e, slot) {
     e.preventDefault()
     setDragOverCell(null)
 
     const assignmentId = e.dataTransfer.getData('assignmentId')
-    if (!assignmentId) return
+    if (!assignmentId || !slot) return
 
-    const slot = findTimeSlot(day, period)
-    if (!slot) {
-      alert('Bu zaman dilimi henüz oluşturulmadı, sayfayı yenile.')
-      return
-    }
-
-    const existingEntry = findScheduleEntry(day, period)
+    const existingEntry = findScheduleEntry(slot.id)
     if (existingEntry) {
       alert('Bu hücre dolu. Önce mevcut dersi kaldır.')
       return
@@ -154,27 +115,23 @@ export default function ScheduleGrid() {
     const assignment = assignments.find((a) => String(a.id) === assignmentId)
     if (!assignment) return
 
-    // --- KONTROL 1: Haftalık saat limiti aşılmış mı? ---
     const currentCount = scheduleEntries.filter(
       (s) => String(s.assignment_id) === assignmentId
     ).length
 
     if (currentCount >= assignment.weekly_hours) {
-      alert(
-        `Bu ders için haftalık saat limiti (${assignment.weekly_hours} saat) doldu. Yeni saat eklemeden önce başka bir yerden kaldırmalısın.`
-      )
+      alert(`Bu ders için haftalık saat limiti (${assignment.weekly_hours} saat) doldu.`)
       return
     }
 
-    // --- KONTROL 2: Öğretmen bu gün/saatte müsait değil mi? ---
     const teacherId = assignment.teacher_id
     const isBlocked = constraints.some((c) => {
       if (String(c.teacher_id) !== String(teacherId)) return false
-      if (c.day_of_week !== day) return false
+      if (c.day_of_week !== slot.day_of_week) return false
       const cStart = c.start_time.slice(0, 5)
       const cEnd = c.end_time.slice(0, 5)
-      // period.start, kısıt aralığının içine düşüyor mu?
-      return period.start >= cStart && period.start < cEnd
+      const slotStart = slot.start_time.slice(0, 5)
+      return slotStart >= cStart && slotStart < cEnd
     })
 
     if (isBlocked) {
@@ -182,7 +139,6 @@ export default function ScheduleGrid() {
       return
     }
 
-    // --- Her şey uygunsa kaydet ---
     const { error } = await supabase.from('schedules').insert({
       branch_id: selectedBranch,
       assignment_id: assignmentId,
@@ -201,11 +157,11 @@ export default function ScheduleGrid() {
       } else {
         alert('Hata: ' + error.message)
       }
-    }else {
+    } else {
       fetchSchedule(selectedBranch)
     }
   }
-  // --- Dolu hücreye tıklayınca dersi kaldır ---
+
   async function handleRemove(entry) {
     if (!confirm('Bu dersi programdan kaldırmak istiyor musun?')) return
     const { error } = await supabase.from('schedules').delete().eq('id', entry.id)
@@ -231,7 +187,6 @@ export default function ScheduleGrid() {
       </Card>
 
       <div className="flex gap-4">
-        {/* SOL: Sürüklenebilir ders kartları */}
         <Card className="p-4 w-64 shrink-0">
           <h2 className="font-semibold mb-2 text-sm text-gray-600">Dersler ve Öğretmenler</h2>
           <p className="text-xs text-gray-400 mb-3">Kartı sürükleyip tabloya bırak.</p>
@@ -247,10 +202,11 @@ export default function ScheduleGrid() {
                   key={a.id}
                   draggable={remaining > 0}
                   onDragStart={(e) => handleDragStart(e, a)}
-                  className={`p-2 rounded-lg border-2 border-transparent transition-colors ${remaining > 0
+                  className={`p-2 rounded-lg border-2 border-transparent transition-colors ${
+                    remaining > 0
                       ? 'cursor-grab active:cursor-grabbing bg-gray-100 hover:bg-gray-200'
                       : 'bg-gray-50 opacity-50 cursor-not-allowed'
-                    }`}
+                  }`}
                 >
                   <p className="font-medium text-sm">{a.courses?.course_name}</p>
                   <p className="text-xs text-gray-500">{a.teachers?.full_name}</p>
@@ -259,33 +215,36 @@ export default function ScheduleGrid() {
                   </p>
                 </div>
               )
-            })} 
+            })}
             {assignments.length === 0 && (
-              <p className="text-xs text-gray-400">Bu şube için atama yok. Önce "Ders Atamaları" ekranından ekle.</p>
+              <p className="text-xs text-gray-400">Bu şube için atama yok.</p>
             )}
           </div>
         </Card>
 
-        {/* SAĞ: Grid */}
         <Card className="p-4 flex-1 overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className="p-2 text-left w-24">Saat</th>
+                <th className="p-2 text-left w-32">Saat</th>
                 {DAYS.map((d) => (
                   <th key={d.value} className="p-2 text-center">{d.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {PERIODS.map((period) => (
-                <tr key={period.start}>
+              {Array.from({ length: maxPeriods }, (_, i) => i + 1).map((periodNumber) => (
+                <tr key={periodNumber}>
                   <td className="p-2 text-gray-500 whitespace-nowrap">
-                    {period.start} - {period.end}
+                    {periodNumber}. Ders
                   </td>
                   {DAYS.map((d) => {
-                    const entry = findScheduleEntry(d.value, period)
-                    const cellKey = `${d.value}-${period.start}`
+                    const slot = getSlotFor(d.value, periodNumber)
+                    if (!slot) {
+                      return <td key={d.value} className="p-2 border bg-gray-100"></td>
+                    }
+                    const entry = findScheduleEntry(slot.id)
+                    const cellKey = `${d.value}-${periodNumber}`
                     const isDragOver = dragOverCell === cellKey
 
                     return (
@@ -293,15 +252,19 @@ export default function ScheduleGrid() {
                         key={d.value}
                         onDragOver={(e) => handleDragOver(e, cellKey)}
                         onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, d.value, period)}
+                        onDrop={(e) => handleDrop(e, slot)}
                         onClick={() => entry && handleRemove(entry)}
-                        className={`p-2 text-center border h-16 align-middle transition-colors ${entry
+                        className={`p-2 text-center border h-16 align-middle transition-colors ${
+                          entry
                             ? 'bg-blue-100 hover:bg-blue-200 cursor-pointer'
                             : isDragOver
-                              ? 'bg-green-100 border-green-400 border-2'
-                              : 'bg-gray-50'
-                          }`}
+                            ? 'bg-green-100 border-green-400 border-2'
+                            : 'bg-gray-50'
+                        }`}
                       >
+                        <p className="text-[10px] text-gray-400 mb-1">
+                          {slot.start_time.slice(0, 5)}-{slot.end_time.slice(0, 5)}
+                        </p>
                         {entry && (
                           <div>
                             <p className="font-medium text-xs">{entry.course_assignments?.courses?.course_name}</p>

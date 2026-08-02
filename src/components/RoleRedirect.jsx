@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import TeacherPanel from '../pages/TeacherManager'
+import TeacherPanel from '../pages/TeacherPanel'
 
 export default function RoleRedirect() {
   const { profile } = useAuth()
