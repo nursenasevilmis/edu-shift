@@ -1,16 +1,21 @@
 import { Link, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
-const menuItems = [
-  { to: '/branches', label: 'Şubeler' },
-  { to: '/courses', label: 'Dersler' },
-  { to: '/teachers', label: 'Öğretmenler' },
-  { to: '/constraints', label: 'Öğretmen Kısıtları' },
-  
-]
-
 export default function AdminLayout() {
   const { profile, signOut } = useAuth()
+
+  const menuItems = [
+    { to: '/branches', label: 'Şubeler' },
+    { to: '/courses', label: 'Dersler' },
+    { to: '/teachers', label: 'Öğretmenler' },
+    { to: '/constraints', label: 'Öğretmen Kısıtları' },
+    { to: '/assignments', label: 'Ders Atamaları' },
+    { to: '/schedule', label: 'Program Oluşturucu' },
+  ]
+
+  if (profile?.role === 'admin') {
+    menuItems.push({ to: '/users', label: 'Kullanıcı Yönetimi' })
+  }
 
   return (
     <div className="min-h-screen flex bg-slate-50">

@@ -8,6 +8,9 @@ import BranchManager from './pages/BranchManager'
 import CourseManager from './pages/CourseManager'
 import TeacherManager from './pages/TeacherManager'
 import ConstraintCalendar from './pages/ConstraintCalendar'
+import AssignmentManager from './pages/AssignmentManager'
+import ScheduleGrid from './pages/ScheduleGrid'
+import UserManager from './pages/UserManager'
 
 function AppRoutes() {
   return (
@@ -28,6 +31,9 @@ function AppRoutes() {
         <Route path="courses" element={<CourseManager />} />
         <Route path="teachers" element={<TeacherManager />} />
         <Route path="constraints" element={<ConstraintCalendar />} />
+        <Route path="assignments" element={<AssignmentManager />} />
+        <Route path="schedule" element={<ScheduleGrid />} />
+        <Route path="users" element={<UserManager />} />
       </Route>
     </Routes>
   )
