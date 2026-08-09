@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Button, Input, Card } from '@heroui/react'
+import { Button, Input } from '@heroui/react'
+import { ShieldCheck } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { supabaseAdmin } from '../supabaseAdminClient'
 import { useAuth } from '../contexts/AuthContext'
+import SelectField from '../components/SelectField'
 
 export default function UserManager() {
   const { profile } = useAuth()
@@ -53,11 +55,7 @@ export default function UserManager() {
     }
 
     setLoading(true)
-
-    const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.signUp({
-      email,
-      password,
-    })
+    const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.signUp({ email, password })
 
     if (signUpError) {
       alert('Kullanici olusturulamadi: ' + signUpError.message)
@@ -66,12 +64,8 @@ export default function UserManager() {
     }
 
     const newUserId = signUpData.user.id
-
     const { error: profileError } = await supabase.from('profiles').insert({
-      id: newUserId,
-      email,
-      role,
-      full_name: fullName,
+      id: newUserId, email, role, full_name: fullName,
     })
 
     if (profileError) {
@@ -81,14 +75,7 @@ export default function UserManager() {
     }
 
     if (role === 'teacher' && linkedTeacherId) {
-      const { error: linkError } = await supabase
-        .from('teachers')
-        .update({ user_id: newUserId })
-        .eq('id', linkedTeacherId)
-
-      if (linkError) {
-        alert('Ogretmen kaydina baglanamadi: ' + linkError.message)
-      }
+      await supabase.from('teachers').update({ user_id: newUserId }).eq('id', linkedTeacherId)
     }
 
     setLoading(false)
@@ -101,119 +88,121 @@ export default function UserManager() {
     alert('Kullanici olusturuldu.')
   }
 
-  const roleLabels = { admin: 'Admin', editor: 'Editor', teacher: 'Ogretmen' }
-  const roleColors = {
-    admin: 'bg-rose-50 text-rose-600',
-    editor: 'bg-blue-50 text-blue-600',
-    teacher: 'bg-emerald-50 text-emerald-600',
+  async function handleRoleChange(userId, newRole) {
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
+    if (error) alert('Hata: ' + error.message)
+    else fetchProfiles()
   }
 
+  const roleLabels = { admin: 'Admin', editor: 'Editor', teacher: 'Ogretmen' }
+
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Kullanici Yonetimi</h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Yeni editor veya ogretmen hesabi olustur
-        </p>
+    <div className="p-4 md:p-8">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Kullanicilar ve Roller</h1>
+          <p className="text-slate-400 text-sm mt-1">Erisim seviyelerini ve bagli ogretmen hesaplarini yonet</p>
+        </div>
+        <span className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+          Sistem calisiyor
+        </span>
       </div>
 
-      <Card className="p-5 border-0 shadow-soft rounded-2xl mb-6">
+      <div className="bg-white rounded-2xl shadow-soft border border-slate-50 p-6 mb-6">
+        <h2 className="font-semibold text-slate-700 mb-1">Yeni Hesap Olustur</h2>
+        <p className="text-xs text-slate-400 mb-4">Editor veya ogretmen icin yeni bir giris hesabi ac</p>
+
         <form onSubmit={handleCreate} className="flex flex-col gap-4">
           <div className="flex gap-3 flex-wrap">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-slate-500">Ad Soyad</label>
-              <Input
-                placeholder="orn: Ahmet Yilmaz"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
+              <Input placeholder="orn: Ahmet Yilmaz" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-slate-500">Email</label>
-              <Input
-                type="email"
-                placeholder="ornek@mail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <Input type="email" placeholder="ornek@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-slate-500">Sifre</label>
-              <Input
-                type="password"
-                placeholder="en az 6 karakter"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <Input type="password" placeholder="en az 6 karakter" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           </div>
 
           <div className="flex gap-3 items-end flex-wrap">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Rol</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="border border-slate-200 rounded-xl px-3 py-2 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="editor">Editor</option>
-                <option value="teacher">Ogretmen</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
+            <SelectField
+              label="Rol"
+              value={role}
+              onChange={setRole}
+              options={[
+                { value: 'editor', label: 'Editor' },
+                { value: 'teacher', label: 'Ogretmen' },
+                { value: 'admin', label: 'Admin' },
+              ]}
+            />
 
             {role === 'teacher' && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-slate-500">Ogretmen Kaydina Bagla</label>
-                <select
-                  value={linkedTeacherId}
-                  onChange={(e) => setLinkedTeacherId(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-2 h-10 text-sm min-w-[180px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">-- Baglama --</option>
-                  {teachers.map((t) => (
-                    <option key={t.id} value={t.id}>{t.full_name}</option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                label="Ogretmen Kaydina Bagla"
+                value={linkedTeacherId}
+                onChange={setLinkedTeacherId}
+                placeholder="-- Baglama --"
+                className="min-w-[180px]"
+                options={teachers.map((t) => ({ value: t.id, label: t.full_name }))}
+              />
             )}
 
-            <Button
-              color="primary"
-              type="submit"
-              isLoading={loading}
-              className="rounded-xl font-medium"
-            >
+            <Button color="primary" type="submit" isLoading={loading} className="rounded-xl font-medium">
               Kullanici Olustur
             </Button>
           </div>
         </form>
-      </Card>
+      </div>
 
-      <h2 className="font-semibold text-sm text-slate-600 mb-3">Mevcut Kullanicilar</h2>
-      <div className="flex flex-col gap-2">
-        {fetching && (
-          <div className="flex flex-col gap-2">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-14 bg-slate-50 rounded-xl animate-pulse"></div>
-            ))}
+      <div className="bg-white rounded-2xl shadow-soft border border-slate-50 overflow-hidden">
+        <div className="p-6 pb-4 flex items-center justify-between">
+          <div>
+            <h2 className="font-semibold text-slate-700">Erisim Dizini</h2>
+            <p className="text-xs text-slate-400 mt-1">Kayitli hesaplarin yetki seviyesini ayarla</p>
           </div>
-        )}
+          <ShieldCheck size={18} className="text-blue-500" />
+        </div>
 
-        {!fetching && profiles.map((p) => (
-          <Card
-            key={p.id}
-            className="p-4 border-0 shadow-soft shadow-soft-hover rounded-xl flex flex-row justify-between items-center transition-all duration-200"
-          >
-            <div>
-              <p className="font-medium text-slate-700 text-sm">{p.full_name}</p>
-              <p className="text-xs text-slate-400">{p.email}</p>
-            </div>
-            <span className={'text-xs px-2.5 py-1 rounded-lg font-medium ' + (roleColors[p.role] || 'bg-slate-50 text-slate-500')}>
-              {roleLabels[p.role] || p.role}
-            </span>
-          </Card>
-        ))}
+        {fetching ? (
+          <div className="p-6">
+            <div className="h-32 bg-slate-50 rounded-xl animate-pulse"></div>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-t border-slate-50">
+                <th className="text-left px-6 py-3 text-[11px] tracking-wider font-semibold text-slate-400">KULLANICI</th>
+                <th className="text-left px-6 py-3 text-[11px] tracking-wider font-semibold text-slate-400">EMAIL</th>
+                <th className="text-left px-6 py-3 text-[11px] tracking-wider font-semibold text-slate-400">ERISIM SEVIYESI</th>
+              </tr>
+            </thead>
+            <tbody>
+              {profiles.map((p) => (
+                <tr key={p.id} className="border-t border-slate-50 hover:bg-slate-50/50 transition-colors duration-150">
+                  <td className="px-6 py-4 font-medium text-slate-700">{p.full_name}</td>
+                  <td className="px-6 py-4 text-slate-400">{p.email}</td>
+                  <td className="px-6 py-4">
+                    <SelectField
+                      value={p.role}
+                      onChange={(newRole) => handleRoleChange(p.id, newRole)}
+                      className="min-w-[130px]"
+                      options={[
+                        { value: 'admin', label: 'Admin' },
+                        { value: 'editor', label: 'Editor' },
+                        { value: 'teacher', label: 'Ogretmen' },
+                      ]}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )

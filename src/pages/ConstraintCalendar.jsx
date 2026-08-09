@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Button, Card } from '@heroui/react'
 import { supabase } from '../supabaseClient'
 import { DAYS } from '../utils/timeUtils'
+import SelectField from '../components/SelectField'
 
 export default function ConstraintCalendar() {
   const [teachers, setTeachers] = useState([])
@@ -131,18 +132,13 @@ export default function ConstraintCalendar() {
       </div>
 
       <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4 flex flex-row items-end gap-4 flex-wrap">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-slate-500">Ogretmen</label>
-          <select
-            value={selectedTeacher}
-            onChange={(e) => setSelectedTeacher(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-2 h-10 text-sm min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {teachers.map((t) => (
-              <option key={t.id} value={t.id}>{t.full_name}</option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Ogretmen"
+          value={selectedTeacher}
+          onChange={setSelectedTeacher}
+          className="min-w-[200px]"
+          options={teachers.map((t) => ({ value: t.id, label: t.full_name }))}
+        />
         <div className="flex items-center gap-4 ml-auto text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 bg-emerald-100 border border-emerald-200 inline-block rounded"></span> Musait

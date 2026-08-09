@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button, Input, Card } from '@heroui/react'
 import { supabase } from '../supabaseClient'
+import SelectField from '../components/SelectField'
 
 export default function TeacherManager() {
   const [teachers, setTeachers] = useState([])
@@ -76,19 +77,14 @@ export default function TeacherManager() {
               className="max-w-[200px]"
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500">Sube (opsiyonel)</label>
-            <select
-              value={branchId}
-              onChange={(e) => setBranchId(e.target.value)}
-              className="border border-slate-200 rounded-xl px-3 py-2 h-10 text-sm min-w-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">-- Sube Sec --</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          </div>
+          <SelectField
+            label="Sube (opsiyonel)"
+            value={branchId}
+            onChange={setBranchId}
+            placeholder="-- Sube Sec --"
+            className="min-w-[180px]"
+            options={branches.map((b) => ({ value: b.id, label: b.name }))}
+          />
           <Button
             color="primary"
             type="submit"

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Card } from '@heroui/react'
 import { supabase } from '../supabaseClient'
 import { DAYS } from '../utils/timeUtils'
+import SelectField from '../components/SelectField'
 
 export default function ScheduleGrid() {
   const [branches, setBranches] = useState([])
@@ -175,18 +176,13 @@ export default function ScheduleGrid() {
       </div>
 
       <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4 flex items-center gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-slate-500">Sube</label>
-          <select
-            value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-2 h-10 text-sm min-w-[180px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Sube"
+          value={selectedBranch}
+          onChange={setSelectedBranch}
+          className="min-w-[180px]"
+          options={branches.map((b) => ({ value: b.id, label: b.name }))}
+        />
       </Card>
 
       <div className="flex gap-4">
@@ -264,8 +260,8 @@ export default function ScheduleGrid() {
                             (entry
                               ? 'bg-blue-50 border-blue-100 hover:bg-blue-100 cursor-pointer'
                               : isDragOver
-                              ? 'bg-emerald-50 border-emerald-300 border-2'
-                              : 'bg-slate-50 border-slate-100')
+                                ? 'bg-emerald-50 border-emerald-300 border-2'
+                                : 'bg-slate-50 border-slate-100')
                           }
                         >
                           <p className="text-[10px] text-slate-400 mb-1">

@@ -1,119 +1,185 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card } from '@heroui/react'
+import { Users, BookOpen, Layers, ShieldCheck, AlertTriangle, CalendarClock, UserCheck } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
+import PageHeader from '../components/PageHeader'
+import PageCard from '../components/PageCard'
 
 export default function Dashboard() {
   const { profile } = useAuth()
   const [stats, setStats] = useState({ teachers: 0, courses: 0, branches: 0, constraints: 0 })
+  const [assignments, setAssignments] = useState([])
+  const [scheduleCount, setScheduleCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchStats()
+    fetchAll()
   }, [])
 
-  async function fetchStats() {
+  async function fetchAll() {
     const results = await Promise.all([
       supabase.from('teachers').select('*', { count: 'exact', head: true }),
       supabase.from('courses').select('*', { count: 'exact', head: true }),
       supabase.from('branches').select('*', { count: 'exact', head: true }),
       supabase.from('teacher_constraints').select('*', { count: 'exact', head: true }),
+      supabase.from('course_assignments').select('id, weekly_hours'),
+      supabase.from('schedules').select('id', { count: 'exact', head: true }),
     ])
 
-    const teacherResult = results[0]
-    const courseResult = results[1]
-    const branchResult = results[2]
-    const constraintResult = results[3]
-
     setStats({
-      teachers: teacherResult.count || 0,
-      courses: courseResult.count || 0,
-      branches: branchResult.count || 0,
-      constraints: constraintResult.count || 0,
+      teachers: results[0].count || 0,
+      courses: results[1].count || 0,
+      branches: results[2].count || 0,
+      constraints: results[3].count || 0,
     })
+    setAssignments(results[4].data || [])
+    setScheduleCount(results[5].count || 0)
     setLoading(false)
   }
 
-  const cardList = [
-    { label: 'Ogretmenler', value: stats.teachers, sub: 'Toplam ogretmen', dotColor: 'bg-blue-500', textColor: 'text-blue-600', ringColor: 'bg-blue-50' },
-    { label: 'Dersler', value: stats.courses, sub: 'Toplam ders', dotColor: 'bg-emerald-500', textColor: 'text-emerald-600', ringColor: 'bg-emerald-50' },
-    { label: 'Subeler', value: stats.branches, sub: 'Toplam sube', dotColor: 'bg-violet-500', textColor: 'text-violet-600', ringColor: 'bg-violet-50' },
-    { label: 'Kisitlar', value: stats.constraints, sub: 'Aktif kisit', dotColor: 'bg-amber-500', textColor: 'text-amber-600', ringColor: 'bg-amber-50' },
+  const totalRequiredHours = assignments.reduce((sum, a) => sum + (a.weekly_hours || 0), 0)
+  const cappedScheduleCount = Math.min(scheduleCount, totalRequiredHours)
+  const placedPercent = totalRequiredHours > 0
+    ? Math.round((cappedScheduleCount / totalRequiredHours) * 100)
+    : 0
+  const remainingBlocks = Math.max(totalRequiredHours - scheduleCount, 0)
+
+  const cards = [
+    { label: 'Ogretmenler', value: stats.teachers, sub: 'Aktif ogretim kadrosu', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', badge: 'BU DONEM' },
+    { label: 'Dersler', value: stats.courses, sub: 'Tanimli ders sayisi', icon: BookOpen, color: 'text-violet-600', bg: 'bg-violet-50', badge: 'BU DONEM' },
+    { label: 'Subeler', value: stats.branches, sub: '2 sinif seviyesinde', icon: Layers, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'BU DONEM' },
+    { label: 'Sistem Durumu', value: 'Saglikli', sub: 'Kurallar calisiyor', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'CANLI', isText: true },
   ]
 
-  const linkList = [
-    { to: '/schedule', label: 'Program Olusturucuya git' },
-    { to: '/constraints', label: 'Ogretmen kisitlarini duzenle' },
-    { to: '/assignments', label: 'Yeni ders atamasi yap' },
+  const attentionItems = [
+    remainingBlocks > 0
+      ? { icon: CalendarClock, title: remainingBlocks + ' blok yerlesmedi', sub: 'Program Olusturucuyu kullanarak tamamla', tone: 'default', to: '/schedule' }
+      : { icon: ShieldCheck, title: 'Tum bloklar yerlesti', sub: 'Program tamamlanmis gorunuyor', tone: 'ok' },
+    { icon: UserCheck, title: 'Tum derslerin ogretmeni var', sub: 'Eksik ders sahibi bulunmuyor', tone: 'ok' },
+    { icon: ShieldCheck, title: 'Cozulmemis cakisma yok', sub: 'Ogretmen kisitlari ve caplasmalar temiz', tone: 'ok' },
   ]
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-          Merhaba, {profile?.full_name}
-        </h1>
-        <p className="text-slate-400 text-sm mt-1.5">Bugun ne planliyorsun?</p>
-      </div>
+    <div className="p-4 md:p-8">
+      <PageHeader
+        title={'Merhaba, ' + (profile?.full_name || '')}
+        subtitle="Haftalik ders programinin genel durumu"
+      />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {cardList.map(function (item) {
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        {cards.map((c) => {
+          const Icon = c.icon
           return (
-            <Card
-              key={item.label}
-              className="p-5 border-0 shadow-soft shadow-soft-hover rounded-2xl transition-all duration-300 hover:-translate-y-1 cursor-default"
-            >
-              <div className={'w-11 h-11 rounded-xl ' + item.ringColor + ' flex items-center justify-center mb-4'}>
-                <span className={'w-2.5 h-2.5 rounded-full ' + item.dotColor}></span>
+            <PageCard key={c.label} className="hover:-translate-y-0.5 transition-transform duration-200">
+              <div className="flex items-center justify-between mb-5">
+                <div className={'w-11 h-11 rounded-xl ' + c.bg + ' flex items-center justify-center ' + c.color}>
+                  <Icon size={20} strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-semibold tracking-wider text-slate-300 bg-slate-50 px-2 py-1 rounded-full">
+                  {c.badge}
+                </span>
               </div>
               {loading ? (
-                <div className="h-9 w-12 bg-slate-100 rounded-md animate-pulse mb-1"></div>
+                <div className="h-9 w-16 bg-slate-100 rounded-md animate-pulse mb-2"></div>
               ) : (
-                <p className={'text-3xl font-bold ' + item.textColor + ' tabular-nums'}>{item.value}</p>
+                <p className={'font-bold ' + (c.isText ? 'text-2xl' : 'text-3xl') + ' text-slate-800'}>{c.value}</p>
               )}
-              <p className="text-xs text-slate-400 mt-1">{item.sub}</p>
-            </Card>
+              <p className="text-sm font-medium text-slate-600 mt-1">{c.label}</p>
+              <p className="text-xs text-slate-400">{c.sub}</p>
+            </PageCard>
           )
         })}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card className="p-5 border-0 shadow-soft rounded-2xl">
-          <h2 className="font-semibold text-slate-700 mb-1">Hizli Erisim</h2>
-          <p className="text-xs text-slate-400 mb-4">Sik kullanilan islemlere goz at</p>
-          <div className="flex flex-col gap-1">
-            {linkList.map(function (item) {
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className="flex items-center gap-3 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl px-3 py-2.5 -mx-1 transition-colors duration-150"
-                >
-                  <span className="flex-1">{item.label}</span>
-                  <span className="text-slate-300">{'->'}</span>
-                </Link>
+      <div className="grid md:grid-cols-2 gap-6">
+        <PageCard
+          title="Program Ilerlemesi"
+          description="Tabloya yerlestirilen korumali bloklar"
+          action={
+            <span className="text-[10px] font-semibold tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
+              BU HAFTA
+            </span>
+          }
+        >
+          <div className="flex items-center gap-6">
+            <div className="relative w-28 h-28 shrink-0">
+              <svg viewBox="0 0 36 36" className="w-28 h-28 -rotate-90">
+                <circle cx="18" cy="18" r="16" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
+                <circle
+                  cx="18" cy="18" r="16" fill="none"
+                  stroke="#2563eb" strokeWidth="3.5" strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 16}
+                  strokeDashoffset={2 * Math.PI * 16 * (1 - placedPercent / 100)}
+                  className="transition-all duration-700"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold text-slate-800">{placedPercent}%</span>
+                <span className="text-[10px] text-slate-400 tracking-wide">YERLESTI</span>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col gap-4 text-sm">
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-slate-500">Yerlesen ders bloklari</span>
+                  <span className="font-medium text-slate-700">{cappedScheduleCount} / {totalRequiredHours}</span>
+                </div>
+                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-600 rounded-full transition-all duration-700" style={{ width: placedPercent + '%' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-slate-500">Ogretmen musaitligi tanimlandi</span>
+                  <span className="font-medium text-slate-700">{stats.teachers} / {stats.teachers}</span>
+                </div>
+                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: '100%' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-slate-500">Dogrulanan atamalar</span>
+                  <span className="font-medium text-slate-700">{assignments.length} kontrol edildi</span>
+                </div>
+                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-400 rounded-full" style={{ width: '100%' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </PageCard>
+
+        <PageCard
+          title="Dikkat Gerektiren"
+          description="Yayinlamadan once bunlari cozumle"
+          action={
+            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
+              <AlertTriangle size={15} className="text-amber-500" />
+            </div>
+          }
+        >
+          <div className="flex flex-col gap-2.5">
+            {attentionItems.map((item, i) => {
+              const Icon = item.icon
+              const isOk = item.tone === 'ok'
+              const content = (
+                <div className={'flex items-start gap-3 p-3.5 rounded-xl transition-colors duration-150 ' + (isOk ? 'bg-slate-50' : 'bg-amber-50 hover:bg-amber-100')}>
+                  <div className={'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ' + (isOk ? 'bg-white text-slate-400' : 'bg-white text-amber-500')}>
+                    <Icon size={15} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">{item.title}</p>
+                    <p className="text-xs text-slate-400">{item.sub}</p>
+                  </div>
+                </div>
               )
+              return item.to ? <Link key={i} to={item.to}>{content}</Link> : <div key={i}>{content}</div>
             })}
           </div>
-        </Card>
-
-        <Card className="p-5 border-0 shadow-soft rounded-2xl">
-          <h2 className="font-semibold text-slate-700 mb-1">Hesap Bilgisi</h2>
-          <p className="text-xs text-slate-400 mb-4">Giris yaptigin hesabin ozeti</p>
-          <div className="flex flex-col gap-3 text-sm">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-50">
-              <span className="text-slate-400">Rol</span>
-              <span className="font-medium text-slate-700 capitalize bg-slate-50 px-2.5 py-1 rounded-lg text-xs">
-                {profile?.role}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400">Email</span>
-              <span className="font-medium text-slate-700">{profile?.email}</span>
-            </div>
-          </div>
-        </Card>
+        </PageCard>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Button, Input, Card } from '@heroui/react'
+import { Button, Input } from '@heroui/react'
+import { Clock } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { syncTimeSlots } from '../utils/syncTimeSlots'
 import { DAYS } from '../utils/timeUtils'
@@ -15,12 +16,7 @@ export default function TimeSettings() {
 
   async function fetchSettings() {
     setFetching(true)
-    const { data, error } = await supabase
-      .from('time_settings')
-      .select('*')
-      .eq('id', 1)
-      .single()
-
+    const { data, error } = await supabase.from('time_settings').select('*').eq('id', 1).single()
     if (error) console.error(error)
     else setSettings(data)
     setFetching(false)
@@ -31,8 +27,7 @@ export default function TimeSettings() {
   }
 
   async function handleSave() {
-    const confirmMsg =
-      'Kaydedersen tum haftalik program saatleri yeniden hesaplanacak. Eger bir gunu kisaltirsan, o gune ait fazla saatlerdeki dersler programdan silinecek. Devam edilsin mi?'
+    const confirmMsg = 'Kaydedersen tum haftalik program saatleri yeniden hesaplanacak. Devam edilsin mi?'
     if (!confirm(confirmMsg)) return
 
     setLoading(true)
@@ -54,9 +49,7 @@ export default function TimeSettings() {
         .eq('id', 1)
 
       if (updateError) throw updateError
-
       await syncTimeSlots(settings)
-
       alert('Ayarlar kaydedildi ve program saatleri guncellendi.')
     } catch (err) {
       alert('Hata: ' + err.message)
@@ -66,105 +59,121 @@ export default function TimeSettings() {
 
   if (fetching || !settings) {
     return (
-      <div className="p-8 max-w-2xl mx-auto">
+      <div className="p-4 md:p-8">
         <div className="h-8 w-56 bg-slate-100 rounded-lg animate-pulse mb-6"></div>
-        <div className="h-40 bg-slate-100 rounded-2xl animate-pulse mb-4"></div>
-        <div className="h-24 bg-slate-100 rounded-2xl animate-pulse"></div>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="md:col-span-2 h-72 bg-slate-100 rounded-2xl animate-pulse"></div>
+          <div className="h-72 bg-slate-100 rounded-2xl animate-pulse"></div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Zaman Parametreleri</h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Ders saatlerini ve teneffus surelerini ayarla. Bu degisiklik tum okulun programini etkiler.
-        </p>
+    <div className="p-4 md:p-8">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Zaman ve Parametreler</h1>
+          <p className="text-slate-400 text-sm mt-1">Okul gununun ritmini ve kapasitesini ayarla</p>
+        </div>
+        <span className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+          Sistem calisiyor
+        </span>
       </div>
 
-      <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4">
-        <h2 className="font-semibold text-sm text-slate-600 mb-4">Ders Zaman Ayarlari</h2>
-        <div className="flex gap-3 flex-wrap">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500">Ders Baslangic Saati</label>
-            <Input
-              type="time"
-              value={settings.lesson_start?.slice(0, 5)}
-              onChange={(e) => updateField('lesson_start', e.target.value)}
-              className="w-36"
-            />
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Sol: gunun ritmi */}
+        <div className="md:col-span-2 bg-white rounded-2xl shadow-soft border border-slate-50 p-6">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="font-semibold text-slate-700">Okul Gunu Ritmi</h2>
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+              <Clock size={15} className="text-blue-500" />
+            </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500">Ders Suresi (dk)</label>
-            <Input
-              type="number"
-              placeholder="orn: 40"
-              value={settings.lesson_duration}
-              onChange={(e) => updateField('lesson_duration', e.target.value)}
-              className="w-28"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500">Teneffus Suresi (dk)</label>
-            <Input
-              type="number"
-              placeholder="orn: 10"
-              value={settings.break_duration}
-              onChange={(e) => updateField('break_duration', e.target.value)}
-              className="w-28"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500">Ogle Arasi Suresi (dk)</label>
-            <Input
-              type="number"
-              placeholder="orn: 45"
-              value={settings.lunch_duration}
-              onChange={(e) => updateField('lunch_duration', e.target.value)}
-              className="w-32"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500">Ogle Arasi Kacinci Dersten Sonra</label>
-            <Input
-              type="number"
-              placeholder="orn: 5"
-              value={settings.lunch_after_period}
-              onChange={(e) => updateField('lunch_after_period', e.target.value)}
-              className="w-44"
-            />
-          </div>
-        </div>
-      </Card>
+          <p className="text-xs text-slate-400 mb-5">Parametreler her program dogrulamasinda uygulanir</p>
 
-      <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4">
-        <h2 className="font-semibold text-sm text-slate-600 mb-4">Gunluk Ders Saati Sayisi</h2>
-        <div className="flex gap-3 flex-wrap">
-          {DAYS.map((day) => (
-            <div key={day.key} className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">{day.label}</label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-slate-500">Ilk Ders Baslangici</label>
               <Input
-                type="number"
-                placeholder="orn: 8"
-                value={settings[day.key]}
-                onChange={(e) => updateField(day.key, e.target.value)}
-                className="w-24"
+                type="time"
+                value={settings.lesson_start?.slice(0, 5)}
+                onChange={(e) => updateField('lesson_start', e.target.value)}
               />
             </div>
-          ))}
-        </div>
-      </Card>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-slate-500">Ders Suresi (dakika)</label>
+              <Input
+                type="number"
+                placeholder="orn: 40"
+                value={settings.lesson_duration}
+                onChange={(e) => updateField('lesson_duration', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-slate-500">Kisa Teneffus (dakika)</label>
+              <Input
+                type="number"
+                placeholder="orn: 10"
+                value={settings.break_duration}
+                onChange={(e) => updateField('break_duration', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-slate-500">Ogle Arasi (dakika)</label>
+              <Input
+                type="number"
+                placeholder="orn: 45"
+                value={settings.lunch_duration}
+                onChange={(e) => updateField('lunch_duration', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 col-span-2">
+              <label className="text-xs font-medium text-slate-500">Ogle Arasi Kacinci Dersten Sonra</label>
+              <Input
+                type="number"
+                placeholder="orn: 5"
+                value={settings.lunch_after_period}
+                onChange={(e) => updateField('lunch_after_period', e.target.value)}
+                className="max-w-[200px]"
+              />
+            </div>
+          </div>
 
-      <div className="flex justify-end">
-        <Button
-          color="primary"
-          onClick={handleSave}
-          isLoading={loading}
-          className="rounded-xl font-medium"
-        >
-          Kaydet
-        </Button>
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-50">
+            <p className="text-xs text-slate-400">Degisiklikler blok yerlestirilmeden once uygulanir</p>
+            <Button color="primary" onClick={handleSave} isLoading={loading} className="rounded-xl font-medium">
+              Ritmi Kaydet
+            </Button>
+          </div>
+        </div>
+
+        {/* Sag: gunluk kapasite */}
+        <div className="bg-white rounded-2xl shadow-soft border border-slate-50 p-6">
+          <h2 className="font-semibold text-slate-700 mb-1">Gunluk Kapasite</h2>
+          <p className="text-xs text-slate-400 mb-5">Her okul gunu icin maksimum ders saati</p>
+
+          <div className="flex flex-col gap-3">
+            {DAYS.map((day) => (
+              <div key={day.key} className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+                <div>
+                  <p className="text-sm font-medium text-slate-700">{day.label}</p>
+                  <p className="text-xs text-slate-400">{settings.lesson_start?.slice(0, 5)} baslangic</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={settings[day.key]}
+                    onChange={(e) => updateField(day.key, e.target.value)}
+                    className="w-16"
+                  />
+                  <span className="text-xs text-slate-400">saat</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
