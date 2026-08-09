@@ -11,6 +11,7 @@ export default function ScheduleGrid() {
   const [scheduleEntries, setScheduleEntries] = useState([])
   const [constraints, setConstraints] = useState([])
   const [dragOverCell, setDragOverCell] = useState(null)
+  const [fetching, setFetching] = useState(true)
 
   useEffect(() => {
     fetchBranches()
@@ -35,6 +36,7 @@ export default function ScheduleGrid() {
   }
 
   async function fetchTimeSlots() {
+    setFetching(true)
     const { data, error } = await supabase
       .from('time_slots')
       .select('*')
@@ -42,6 +44,7 @@ export default function ScheduleGrid() {
       .order('period_number')
     if (error) console.error(error)
     else setTimeSlots(data)
+    setFetching(false)
   }
 
   async function fetchConstraints() {
@@ -68,18 +71,13 @@ export default function ScheduleGrid() {
     else setScheduleEntries(data)
   }
 
-  // Bir günün en fazla kaç period'u varsa, tabloyu o kadar satır göstereceğiz
   const maxPeriods = Math.max(
     1,
-    ...DAYS.map(
-      (d) => timeSlots.filter((s) => s.day_of_week === d.value).length
-    )
+    ...DAYS.map((d) => timeSlots.filter((s) => s.day_of_week === d.value).length)
   )
 
   function getSlotFor(day, periodNumber) {
-    return timeSlots.find(
-      (s) => s.day_of_week === day && s.period_number === periodNumber
-    )
+    return timeSlots.find((s) => s.day_of_week === day && s.period_number === periodNumber)
   }
 
   function findScheduleEntry(slotId) {
@@ -108,7 +106,7 @@ export default function ScheduleGrid() {
 
     const existingEntry = findScheduleEntry(slot.id)
     if (existingEntry) {
-      alert('Bu hücre dolu. Önce mevcut dersi kaldır.')
+      alert('Bu hucre dolu. Once mevcut dersi kaldir.')
       return
     }
 
@@ -120,7 +118,7 @@ export default function ScheduleGrid() {
     ).length
 
     if (currentCount >= assignment.weekly_hours) {
-      alert(`Bu ders için haftalık saat limiti (${assignment.weekly_hours} saat) doldu.`)
+      alert('Bu ders icin haftalik saat limiti (' + assignment.weekly_hours + ' saat) doldu.')
       return
     }
 
@@ -135,7 +133,7 @@ export default function ScheduleGrid() {
     })
 
     if (isBlocked) {
-      alert('Bu öğretmen bu gün ve saatte müsait değil (kısıt takviminde işaretli).')
+      alert('Bu ogretmen bu gun ve saatte musait degil.')
       return
     }
 
@@ -147,13 +145,13 @@ export default function ScheduleGrid() {
 
     if (error) {
       if (error.message.includes('unique_teacher_per_slot')) {
-        alert('Çakışma! Bu öğretmen bu saatte başka bir derste.')
+        alert('Cakisma! Bu ogretmen bu saatte baska bir derste.')
       } else if (error.message.includes('unique_branch_per_slot')) {
-        alert('Çakışma! Bu şube bu saatte başka bir derste.')
+        alert('Cakisma! Bu sube bu saatte baska bir derste.')
       } else if (error.message.includes('Haftalık saat limiti')) {
-        alert('Haftalık saat limiti doldu.')
+        alert('Haftalik saat limiti doldu.')
       } else if (error.message.includes('müsait değil')) {
-        alert('Bu öğretmen bu gün ve saatte müsait değil.')
+        alert('Bu ogretmen bu gun ve saatte musait degil.')
       } else {
         alert('Hata: ' + error.message)
       }
@@ -163,33 +161,38 @@ export default function ScheduleGrid() {
   }
 
   async function handleRemove(entry) {
-    if (!confirm('Bu dersi programdan kaldırmak istiyor musun?')) return
+    if (!confirm('Bu dersi programdan kaldirmak istiyor musun?')) return
     const { error } = await supabase.from('schedules').delete().eq('id', entry.id)
     if (error) alert('Hata: ' + error.message)
     else fetchSchedule(selectedBranch)
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Program Oluşturucu</h1>
+    <div className="p-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Program Olusturucu</h1>
+        <p className="text-slate-400 text-sm mt-1">Dersleri surukleyip haftalik tabloya yerlestir</p>
+      </div>
 
-      <Card className="p-4 mb-4 flex items-center gap-4">
-        <label className="text-sm font-medium">Şube:</label>
-        <select
-          value={selectedBranch}
-          onChange={(e) => setSelectedBranch(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2"
-        >
-          {branches.map((b) => (
-            <option key={b.id} value={b.id}>{b.name}</option>
-          ))}
-        </select>
+      <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4 flex items-center gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-slate-500">Sube</label>
+          <select
+            value={selectedBranch}
+            onChange={(e) => setSelectedBranch(e.target.value)}
+            className="border border-slate-200 rounded-xl px-3 py-2 h-10 text-sm min-w-[180px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+        </div>
       </Card>
 
       <div className="flex gap-4">
-        <Card className="p-4 w-64 shrink-0">
-          <h2 className="font-semibold mb-2 text-sm text-gray-600">Dersler ve Öğretmenler</h2>
-          <p className="text-xs text-gray-400 mb-3">Kartı sürükleyip tabloya bırak.</p>
+        <Card className="p-5 border-0 shadow-soft rounded-2xl w-64 shrink-0 h-fit">
+          <h2 className="font-semibold text-sm text-slate-700 mb-1">Dersler ve Ogretmenler</h2>
+          <p className="text-xs text-slate-400 mb-4">Karti surukleyip tabloya birak</p>
           <div className="flex flex-col gap-2">
             {assignments.map((a) => {
               const placedCount = scheduleEntries.filter(
@@ -202,82 +205,86 @@ export default function ScheduleGrid() {
                   key={a.id}
                   draggable={remaining > 0}
                   onDragStart={(e) => handleDragStart(e, a)}
-                  className={`p-2 rounded-lg border-2 border-transparent transition-colors ${
-                    remaining > 0
-                      ? 'cursor-grab active:cursor-grabbing bg-gray-100 hover:bg-gray-200'
-                      : 'bg-gray-50 opacity-50 cursor-not-allowed'
-                  }`}
+                  className={
+                    'p-3 rounded-xl border transition-all duration-150 ' +
+                    (remaining > 0
+                      ? 'cursor-grab active:cursor-grabbing bg-blue-50 border-blue-100 hover:shadow-soft hover:-translate-y-0.5'
+                      : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed')
+                  }
                 >
-                  <p className="font-medium text-sm">{a.courses?.course_name}</p>
-                  <p className="text-xs text-gray-500">{a.teachers?.full_name}</p>
-                  <p className="text-xs text-gray-400">
-                    {placedCount}/{a.weekly_hours} saat yerleşti {a.block_pattern && `(${a.block_pattern})`}
+                  <p className="font-medium text-sm text-slate-700">{a.courses?.course_name}</p>
+                  <p className="text-xs text-slate-500">{a.teachers?.full_name}</p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    {placedCount}/{a.weekly_hours} saat {a.block_pattern ? '(' + a.block_pattern + ')' : ''}
                   </p>
                 </div>
               )
             })}
             {assignments.length === 0 && (
-              <p className="text-xs text-gray-400">Bu şube için atama yok.</p>
+              <p className="text-xs text-slate-400">Bu sube icin atama yok.</p>
             )}
           </div>
         </Card>
 
-        <Card className="p-4 flex-1 overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className="p-2 text-left w-32">Saat</th>
-                {DAYS.map((d) => (
-                  <th key={d.value} className="p-2 text-center">{d.label}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: maxPeriods }, (_, i) => i + 1).map((periodNumber) => (
-                <tr key={periodNumber}>
-                  <td className="p-2 text-gray-500 whitespace-nowrap">
-                    {periodNumber}. Ders
-                  </td>
-                  {DAYS.map((d) => {
-                    const slot = getSlotFor(d.value, periodNumber)
-                    if (!slot) {
-                      return <td key={d.value} className="p-2 border bg-gray-100"></td>
-                    }
-                    const entry = findScheduleEntry(slot.id)
-                    const cellKey = `${d.value}-${periodNumber}`
-                    const isDragOver = dragOverCell === cellKey
-
-                    return (
-                      <td
-                        key={d.value}
-                        onDragOver={(e) => handleDragOver(e, cellKey)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, slot)}
-                        onClick={() => entry && handleRemove(entry)}
-                        className={`p-2 text-center border h-16 align-middle transition-colors ${
-                          entry
-                            ? 'bg-blue-100 hover:bg-blue-200 cursor-pointer'
-                            : isDragOver
-                            ? 'bg-green-100 border-green-400 border-2'
-                            : 'bg-gray-50'
-                        }`}
-                      >
-                        <p className="text-[10px] text-gray-400 mb-1">
-                          {slot.start_time.slice(0, 5)}-{slot.end_time.slice(0, 5)}
-                        </p>
-                        {entry && (
-                          <div>
-                            <p className="font-medium text-xs">{entry.course_assignments?.courses?.course_name}</p>
-                            <p className="text-xs text-gray-500">{entry.course_assignments?.teachers?.full_name}</p>
-                          </div>
-                        )}
-                      </td>
-                    )
-                  })}
+        <Card className="p-5 border-0 shadow-soft rounded-2xl flex-1 overflow-x-auto">
+          {fetching ? (
+            <div className="h-96 bg-slate-50 rounded-xl animate-pulse"></div>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th className="p-2 text-left w-32 text-xs font-medium text-slate-400">Saat</th>
+                  {DAYS.map((d) => (
+                    <th key={d.value} className="p-2 text-center text-xs font-medium text-slate-500">{d.label}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {Array.from({ length: maxPeriods }, (_, i) => i + 1).map((periodNumber) => (
+                  <tr key={periodNumber}>
+                    <td className="p-2 text-slate-400 whitespace-nowrap text-xs">{periodNumber}. Ders</td>
+                    {DAYS.map((d) => {
+                      const slot = getSlotFor(d.value, periodNumber)
+                      if (!slot) {
+                        return <td key={d.value} className="p-2 border border-slate-50 bg-slate-50 rounded-lg"></td>
+                      }
+                      const entry = findScheduleEntry(slot.id)
+                      const cellKey = d.value + '-' + periodNumber
+                      const isDragOver = dragOverCell === cellKey
+
+                      return (
+                        <td
+                          key={d.value}
+                          onDragOver={(e) => handleDragOver(e, cellKey)}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, slot)}
+                          onClick={() => entry && handleRemove(entry)}
+                          className={
+                            'p-2 text-center h-16 align-middle rounded-lg border transition-all duration-150 ' +
+                            (entry
+                              ? 'bg-blue-50 border-blue-100 hover:bg-blue-100 cursor-pointer'
+                              : isDragOver
+                              ? 'bg-emerald-50 border-emerald-300 border-2'
+                              : 'bg-slate-50 border-slate-100')
+                          }
+                        >
+                          <p className="text-[10px] text-slate-400 mb-1">
+                            {slot.start_time.slice(0, 5)}-{slot.end_time.slice(0, 5)}
+                          </p>
+                          {entry && (
+                            <div>
+                              <p className="font-medium text-xs text-slate-700">{entry.course_assignments?.courses?.course_name}</p>
+                              <p className="text-[11px] text-slate-500">{entry.course_assignments?.teachers?.full_name}</p>
+                            </div>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </Card>
       </div>
     </div>

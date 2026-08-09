@@ -6,7 +6,7 @@ export default function RoleRedirect() {
   const { profile } = useAuth()
 
   if (profile?.role === 'admin' || profile?.role === 'editor') {
-    return <Navigate to="/branches" />
+    return <Navigate to="/dashboard" />
   }
   if (profile?.role === 'teacher') {
     return <TeacherPanel />

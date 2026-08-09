@@ -12,6 +12,7 @@ import AssignmentManager from './pages/AssignmentManager'
 import ScheduleGrid from './pages/ScheduleGrid'
 import UserManager from './pages/UserManager'
 import TimeSettings from './pages/TimeSettings'
+import Dashboard from './pages/Dashboard'
 
 function AppRoutes() {
   return (
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="schedule" element={<ScheduleGrid />} />
         <Route path="users" element={<UserManager />} />
         <Route path="time-settings" element={<TimeSettings />} />
+        <Route path="dashboard" element={<Dashboard />} />
       </Route>
     </Routes>
   )

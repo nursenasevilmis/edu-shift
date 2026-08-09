@@ -9,6 +9,7 @@ export default function ConstraintCalendar() {
   const [timeSlots, setTimeSlots] = useState([])
   const [selectedCells, setSelectedCells] = useState(new Set())
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
 
   useEffect(() => {
     fetchTeachers()
@@ -30,6 +31,7 @@ export default function ConstraintCalendar() {
   }
 
   async function fetchTimeSlots() {
+    setFetching(true)
     const { data, error } = await supabase
       .from('time_slots')
       .select('*')
@@ -37,6 +39,7 @@ export default function ConstraintCalendar() {
       .order('period_number')
     if (error) console.error(error)
     else setTimeSlots(data)
+    setFetching(false)
   }
 
   async function fetchConstraints(teacherId) {
@@ -52,7 +55,7 @@ export default function ConstraintCalendar() {
 
     const cells = new Set()
     data.forEach((c) => {
-      cells.add(`${c.day_of_week}-${c.start_time.slice(0, 5)}`)
+      cells.add(c.day_of_week + '-' + c.start_time.slice(0, 5))
     })
     setSelectedCells(cells)
   }
@@ -67,7 +70,7 @@ export default function ConstraintCalendar() {
   }
 
   function toggleCell(slot) {
-    const key = `${slot.day_of_week}-${slot.start_time.slice(0, 5)}`
+    const key = slot.day_of_week + '-' + slot.start_time.slice(0, 5)
     setSelectedCells((prev) => {
       const next = new Set(prev)
       if (next.has(key)) next.delete(key)
@@ -92,7 +95,9 @@ export default function ConstraintCalendar() {
     }
 
     const rows = Array.from(selectedCells).map((key) => {
-      const [day, start] = key.split('-')
+      const parts = key.split('-')
+      const day = parts[0]
+      const start = parts[1]
       const slot = timeSlots.find(
         (s) => s.day_of_week === Number(day) && s.start_time.slice(0, 5) === start
       )
@@ -101,7 +106,7 @@ export default function ConstraintCalendar() {
         day_of_week: Number(day),
         start_time: slot.start_time,
         end_time: slot.end_time,
-        reason: 'Müsait değil',
+        reason: 'Musait degil',
       }
     })
 
@@ -115,78 +120,95 @@ export default function ConstraintCalendar() {
     }
 
     setLoading(false)
-    alert('Kısıtlar kaydedildi.')
+    alert('Kisitlar kaydedildi.')
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Öğretmen Kısıt Takvimi</h1>
+    <div className="p-8 max-w-5xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Ogretmen Kisit Takvimi</h1>
+        <p className="text-slate-400 text-sm mt-1">Ogretmenin musait olmadigi saatleri isaretle</p>
+      </div>
 
-      <Card className="p-4 mb-4 flex flex-row items-center gap-4">
-        <label className="text-sm font-medium">Öğretmen:</label>
-        <select
-          value={selectedTeacher}
-          onChange={(e) => setSelectedTeacher(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2"
-        >
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>{t.full_name}</option>
-          ))}
-        </select>
-        <div className="flex items-center gap-4 ml-auto text-sm">
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-green-200 inline-block rounded"></span> Müsait
+      <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4 flex flex-row items-end gap-4 flex-wrap">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-slate-500">Ogretmen</label>
+          <select
+            value={selectedTeacher}
+            onChange={(e) => setSelectedTeacher(e.target.value)}
+            className="border border-slate-200 rounded-xl px-3 py-2 h-10 text-sm min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            {teachers.map((t) => (
+              <option key={t.id} value={t.id}>{t.full_name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-4 ml-auto text-xs text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 bg-emerald-100 border border-emerald-200 inline-block rounded"></span> Musait
           </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-red-200 inline-block rounded"></span> Müsait Değil
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 bg-rose-100 border border-rose-200 inline-block rounded"></span> Musait Degil
           </span>
         </div>
       </Card>
 
-      <Card className="p-4 overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr>
-              <th className="p-2 text-left w-32">Saat</th>
-              {DAYS.map((d) => (
-                <th key={d.value} className="p-2 text-center">{d.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: maxPeriods }, (_, i) => i + 1).map((periodNumber) => (
-              <tr key={periodNumber}>
-                <td className="p-2 text-gray-500 whitespace-nowrap">{periodNumber}. Ders</td>
-                {DAYS.map((d) => {
-                  const slot = getSlotFor(d.value, periodNumber)
-                  if (!slot) {
-                    return <td key={d.value} className="p-2 border bg-gray-100"></td>
-                  }
-                  const key = `${d.value}-${slot.start_time.slice(0, 5)}`
-                  const isBlocked = selectedCells.has(key)
-                  return (
-                    <td
-                      key={d.value}
-                      onClick={() => toggleCell(slot)}
-                      className={`p-3 text-center border cursor-pointer select-none transition-colors ${
-                        isBlocked ? 'bg-red-200 hover:bg-red-300' : 'bg-green-100 hover:bg-green-200'
-                      }`}
-                    >
-                      <p className="text-[10px] text-gray-500">
-                        {slot.start_time.slice(0, 5)}-{slot.end_time.slice(0, 5)}
-                      </p>
-                      {isBlocked && <span className="text-xs">Müsait Değil</span>}
-                    </td>
-                  )
-                })}
+      <Card className="p-5 border-0 shadow-soft rounded-2xl overflow-x-auto">
+        {fetching ? (
+          <div className="h-64 bg-slate-50 rounded-xl animate-pulse"></div>
+        ) : (
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr>
+                <th className="p-2 text-left w-28 text-xs font-medium text-slate-400">Saat</th>
+                {DAYS.map((d) => (
+                  <th key={d.value} className="p-2 text-center text-xs font-medium text-slate-500">{d.label}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {Array.from({ length: maxPeriods }, (_, i) => i + 1).map((periodNumber) => (
+                <tr key={periodNumber}>
+                  <td className="p-2 text-slate-400 whitespace-nowrap text-xs">{periodNumber}. Ders</td>
+                  {DAYS.map((d) => {
+                    const slot = getSlotFor(d.value, periodNumber)
+                    if (!slot) {
+                      return <td key={d.value} className="p-2 border border-slate-50 bg-slate-50 rounded-lg"></td>
+                    }
+                    const key = d.value + '-' + slot.start_time.slice(0, 5)
+                    const isBlocked = selectedCells.has(key)
+                    return (
+                      <td
+                        key={d.value}
+                        onClick={() => toggleCell(slot)}
+                        className={
+                          'p-3 text-center cursor-pointer select-none transition-all duration-150 rounded-lg border ' +
+                          (isBlocked
+                            ? 'bg-rose-50 border-rose-200 hover:bg-rose-100'
+                            : 'bg-emerald-50 border-emerald-100 hover:bg-emerald-100')
+                        }
+                      >
+                        <p className="text-[10px] text-slate-400">
+                          {slot.start_time.slice(0, 5)}-{slot.end_time.slice(0, 5)}
+                        </p>
+                        {isBlocked && <span className="text-[10px] text-rose-500 font-medium">Musait Degil</span>}
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Card>
 
       <div className="flex justify-end mt-4">
-        <Button color="primary" onClick={handleSave} isLoading={loading}>
+        <Button
+          color="primary"
+          onClick={handleSave}
+          isLoading={loading}
+          className="rounded-xl font-medium"
+        >
           Kaydet
         </Button>
       </div>
