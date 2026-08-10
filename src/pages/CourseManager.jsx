@@ -3,6 +3,8 @@ import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import PageHeader from '../components/PageHeader'
 import PageCard from '../components/PageCard'
+import { useToast } from '../contexts/ToastContext'
+import { useConfirm } from '../contexts/ConfirmContext'
 
 export default function CourseManager() {
   const [courses, setCourses] = useState([])
@@ -10,6 +12,9 @@ export default function CourseManager() {
   const [courseCode, setCourseCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const toast = useToast()
+  const confirmDialog = useConfirm()
+
 
   useEffect(() => {
     fetchCourses()
@@ -32,8 +37,9 @@ export default function CourseManager() {
     setLoading(false)
 
     if (error) {
-      alert('Hata: ' + error.message)
+      toast.error('Ders eklenemedi: ' + error.message)
     } else {
+      toast.success('Ders eklendi.')
       setCourseName('')
       setCourseCode('')
       fetchCourses()
@@ -41,10 +47,15 @@ export default function CourseManager() {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Bu dersi silmek istedigine emin misin?')) return
+    const ok = await confirmDialog('Bu dersi silmek istedigine emin misin? Bu islem geri alinamaz.')
+    if (!ok) return
+  
     const { error } = await supabase.from('courses').delete().eq('id', id)
-    if (error) alert('Hata: ' + error.message)
-    else fetchCourses()
+    if (error) toast.error('Silinemedi: ' + error.message)
+    else {
+      toast.success('Ders silindi.')
+      fetchCourses()
+    }
   }
 
   const dotColors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-violet-500', 'bg-rose-500']

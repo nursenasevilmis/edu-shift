@@ -4,11 +4,15 @@ import { Clock } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { syncTimeSlots } from '../utils/syncTimeSlots'
 import { DAYS } from '../utils/timeUtils'
+import { useToast } from '../contexts/ToastContext'
+import { useConfirm } from '../contexts/ConfirmContext'
 
 export default function TimeSettings() {
   const [settings, setSettings] = useState(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const toast = useToast()
+  const confirmDialog = useConfirm()
 
   useEffect(() => {
     fetchSettings()
@@ -27,8 +31,12 @@ export default function TimeSettings() {
   }
 
   async function handleSave() {
-    const confirmMsg = 'Kaydedersen tum haftalik program saatleri yeniden hesaplanacak. Devam edilsin mi?'
-    if (!confirm(confirmMsg)) return
+    const ok = await confirmDialog({
+      title: 'Zaman ayarlarini guncelle',
+      message: 'Kaydedersen tum haftalik program saatleri yeniden hesaplanacak. Devam edilsin mi?',
+      confirmLabel: 'Kaydet',
+    })
+    if (!ok) return
 
     setLoading(true)
     try {
@@ -50,9 +58,9 @@ export default function TimeSettings() {
 
       if (updateError) throw updateError
       await syncTimeSlots(settings)
-      alert('Ayarlar kaydedildi ve program saatleri guncellendi.')
+      toast.success('Ayarlar kaydedildi ve program saatleri guncellendi.')
     } catch (err) {
-      alert('Hata: ' + err.message)
+      toast.error('Hata: ' + err.message)
     }
     setLoading(false)
   }

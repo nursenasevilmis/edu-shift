@@ -13,6 +13,8 @@ import ScheduleGrid from './pages/ScheduleGrid'
 import UserManager from './pages/UserManager'
 import TimeSettings from './pages/TimeSettings'
 import Dashboard from './pages/Dashboard'
+import { ToastProvider } from './contexts/ToastContext'
+import { ConfirmProvider } from './contexts/ConfirmContext'
 
 function AppRoutes() {
   return (
@@ -42,13 +44,16 @@ function AppRoutes() {
     </Routes>
   )
 }
-
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <ToastProvider>
+        <ConfirmProvider>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </ConfirmProvider>
+      </ToastProvider>
     </BrowserRouter>
   )
 }

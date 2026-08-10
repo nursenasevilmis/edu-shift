@@ -3,6 +3,8 @@ import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import PageHeader from '../components/PageHeader'
 import PageCard from '../components/PageCard'
+import { useToast } from '../contexts/ToastContext'
+import { useConfirm } from '../contexts/ConfirmContext'
 
 export default function BranchManager() {
   const [branches, setBranches] = useState([])
@@ -10,6 +12,8 @@ export default function BranchManager() {
   const [gradeLevel, setGradeLevel] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const toast = useToast()
+  const confirmDialog = useConfirm()
 
   useEffect(() => {
     fetchBranches()
@@ -32,8 +36,9 @@ export default function BranchManager() {
     setLoading(false)
 
     if (error) {
-      alert('Hata: ' + error.message)
+      toast.error('Sube eklenemedi: ' + error.message)
     } else {
+      toast.success('Sube eklendi.')
       setName('')
       setGradeLevel('')
       fetchBranches()
@@ -41,10 +46,15 @@ export default function BranchManager() {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Bu subeyi silmek istedigine emin misin?')) return
+    const ok = await confirmDialog('Bu subeyi silmek istedigine emin misin? Bu islem geri alinamaz.')
+    if (!ok) return
+  
     const { error } = await supabase.from('branches').delete().eq('id', id)
-    if (error) alert('Hata: ' + error.message)
-    else fetchBranches()
+    if (error) toast.error('Silinemedi: ' + error.message)
+    else {
+      toast.success('Sube silindi.')
+      fetchBranches()
+    }
   }
 
   const colors = ['bg-blue-50 text-blue-600', 'bg-violet-50 text-violet-600', 'bg-emerald-50 text-emerald-600', 'bg-amber-50 text-amber-600']

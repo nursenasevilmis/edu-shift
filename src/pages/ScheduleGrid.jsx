@@ -3,6 +3,8 @@ import { Card } from '@heroui/react'
 import { supabase } from '../supabaseClient'
 import { DAYS, computeBlockState } from '../utils/timeUtils'
 import SelectField from '../components/SelectField'
+import { useToast } from '../contexts/ToastContext'
+import { useConfirm } from '../contexts/ConfirmContext'
 
 export default function ScheduleGrid() {
   const [branches, setBranches] = useState([])
@@ -13,6 +15,8 @@ export default function ScheduleGrid() {
   const [constraints, setConstraints] = useState([])
   const [dragOverCell, setDragOverCell] = useState(null)
   const [fetching, setFetching] = useState(true)
+  const toast = useToast()
+  const confirmDialog = useConfirm()
 
   useEffect(() => {
     fetchBranches()
@@ -153,7 +157,7 @@ export default function ScheduleGrid() {
     for (let p = slot.period_number; p < slot.period_number + blockSize; p++) {
       const s = getSlotFor(slot.day_of_week, p)
       if (!s) {
-        alert('Bu gunde blok icin yeterli ardisik ders saati yok (' + blockSize + ' saat).')
+        toast.warning('Bu gunde blok icin yeterli ardisik ders saati yok (' + blockSize + ' saat).')
         return
       }
       targetSlots.push(s)
@@ -162,14 +166,14 @@ export default function ScheduleGrid() {
     // Hucrelerden herhangi biri dolu mu?
     const occupied = targetSlots.some((s) => findScheduleEntry(s.id))
     if (occupied) {
-      alert('Bu hucrelerden biri dolu. Once mevcut dersi kaldir.')
+      toast.warning('Bu hucrelerden biri dolu. Once mevcut dersi kaldir.')
       return
     }
 
     // Haftalık saat limiti kontrolü
     const currentCount = entriesForAssignment(assignmentId).length
     if (currentCount + blockSize > assignment.weekly_hours) {
-      alert('Bu ders icin haftalik saat limiti (' + assignment.weekly_hours + ' saat) asilir.')
+      toast.warning('Bu ders icin haftalik saat limiti (' + assignment.weekly_hours + ' saat) asilir.')
       return
     }
 
@@ -187,7 +191,7 @@ export default function ScheduleGrid() {
     )
 
     if (isBlocked) {
-      alert('Bu ogretmen bu gun ve saatte(lerde) musait degil.')
+      toast.warning('Bu ogretmen bu gun ve saatte(lerde) musait degil.')
       return
     }
 
@@ -203,17 +207,18 @@ export default function ScheduleGrid() {
 
     if (error) {
       if (error.message.includes('unique_teacher_per_slot')) {
-        alert('Cakisma! Bu ogretmen bu saatte(lerde) baska bir derste.')
+        toast.error('Cakisma! Bu ogretmen bu saatte(lerde) baska bir derste.')
       } else if (error.message.includes('unique_branch_per_slot')) {
-        alert('Cakisma! Bu sube bu saatte(lerde) baska bir derste.')
+        toast.error('Cakisma! Bu sube bu saatte(lerde) baska bir derste.')
       } else if (error.message.includes('Haftalık saat limiti')) {
-        alert('Haftalik saat limiti doldu.')
+        toast.warning('Haftalik saat limiti doldu.')
       } else if (error.message.includes('müsait değil')) {
-        alert('Bu ogretmen bu gun ve saatte musait degil.')
+        toast.warning('Bu ogretmen bu gun ve saatte musait degil.')
       } else {
-        alert('Hata: ' + error.message)
+        toast.error('Hata: ' + error.message)
       }
     } else {
+      toast.success('Blok yerlestirildi.')
       fetchSchedule(selectedBranch)
     }
   }
@@ -221,12 +226,16 @@ export default function ScheduleGrid() {
   async function handleRemove(entry) {
     const run = findRunForEntry(entry)
     const label = run.length > 1 ? 'Bu ' + run.length + ' saatlik blogu' : 'Bu dersi'
-    if (!confirm(label + ' programdan kaldirmak istiyor musun?')) return
+    const ok = await confirmDialog(label + ' programdan kaldirmak istiyor musun?')
+    if (!ok) return
 
     const ids = run.map((r) => r.id)
     const { error } = await supabase.from('schedules').delete().in('id', ids)
-    if (error) alert('Hata: ' + error.message)
-    else fetchSchedule(selectedBranch)
+    if (error) toast.error('Hata: ' + error.message)
+    else {
+      toast.success('Programdan kaldirildi.')
+      fetchSchedule(selectedBranch)
+    }
   }
 
   return (

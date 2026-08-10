@@ -5,6 +5,8 @@ import SelectField from '../components/SelectField'
 import PageHeader from '../components/PageHeader'
 import PageCard from '../components/PageCard'
 import { generateBlockPatterns } from '../utils/blockPatterns'
+import { useToast } from '../contexts/ToastContext'
+import { useConfirm } from '../contexts/ConfirmContext'
 
 export default function AssignmentManager() {
     const [assignments, setAssignments] = useState([])
@@ -19,6 +21,8 @@ export default function AssignmentManager() {
     const [blockPattern, setBlockPattern] = useState('')
     const [loading, setLoading] = useState(false)
     const [fetching, setFetching] = useState(true)
+    const toast = useToast()
+    const confirmDialog = useConfirm()
 
     useEffect(() => {
         fetchAll()
@@ -51,7 +55,7 @@ export default function AssignmentManager() {
     async function handleAdd(e) {
         e.preventDefault()
         if (!courseId || !teacherId || !branchId || !weeklyHours) {
-            alert('Lutfen tum alanlari doldur.')
+            toast.warning('Lütfen tüm alanları doldur.')
             return
         }
 
@@ -64,10 +68,10 @@ export default function AssignmentManager() {
             block_pattern: blockPattern || null,
         })
         setLoading(false)
-
         if (error) {
-            alert('Hata: ' + error.message)
+            toast.error('Atama eklenemedi: ' + error.message)
         } else {
+            toast.success('Atama eklendi.')
             setCourseId('')
             setTeacherId('')
             setBranchId('')
@@ -76,12 +80,16 @@ export default function AssignmentManager() {
             fetchAll()
         }
     }
-
     async function handleDelete(id) {
-        if (!confirm('Bu atamayi silmek istedigine emin misin?')) return
+        const ok = await confirmDialog('Bu atamayi silmek istedigine emin misin? Bu islem geri alinamaz.')
+        if (!ok) return
+
         const { error } = await supabase.from('course_assignments').delete().eq('id', id)
-        if (error) alert('Hata: ' + error.message)
-        else fetchAll()
+        if (error) toast.error('Silinemedi: ' + error.message)
+        else {
+            toast.success('Atama silindi.')
+            fetchAll()
+        }
     }
 
     const blockOptions = generateBlockPatterns(weeklyHours).map((p) => ({ value: p, label: p }))

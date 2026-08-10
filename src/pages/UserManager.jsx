@@ -6,6 +6,7 @@ import { supabase } from '../supabaseClient'
 import { supabaseAdmin } from '../supabaseAdminClient'
 import { useAuth } from '../contexts/AuthContext'
 import SelectField from '../components/SelectField'
+import { useToast } from '../contexts/ToastContext'
 
 export default function UserManager() {
   const { profile } = useAuth()
@@ -19,6 +20,7 @@ export default function UserManager() {
   const [linkedTeacherId, setLinkedTeacherId] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const toast = useToast()
 
   useEffect(() => {
     fetchProfiles()
@@ -46,11 +48,11 @@ export default function UserManager() {
   async function handleCreate(e) {
     e.preventDefault()
     if (!email.trim() || !password.trim() || !fullName.trim()) {
-      alert('Lutfen tum alanlari doldur.')
+      toast.warning('Lutfen tum alanlari doldur.')
       return
     }
     if (password.length < 6) {
-      alert('Sifre en az 6 karakter olmali.')
+      toast.warning('Sifre en az 6 karakter olmali.')
       return
     }
 
@@ -58,7 +60,7 @@ export default function UserManager() {
     const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.signUp({ email, password })
 
     if (signUpError) {
-      alert('Kullanici olusturulamadi: ' + signUpError.message)
+      toast.error('Kullanici olusturulamadi: ' + signUpError.message)
       setLoading(false)
       return
     }
@@ -69,7 +71,7 @@ export default function UserManager() {
     })
 
     if (profileError) {
-      alert('Profil olusturulamadi: ' + profileError.message)
+      toast.error('Profil olusturulamadi: ' + profileError.message)
       setLoading(false)
       return
     }
@@ -85,13 +87,16 @@ export default function UserManager() {
     setLinkedTeacherId('')
     fetchProfiles()
     fetchUnlinkedTeachers()
-    alert('Kullanici olusturuldu.')
+    toast.success('Kullanici olusturuldu.')
   }
 
   async function handleRoleChange(userId, newRole) {
     const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
-    if (error) alert('Hata: ' + error.message)
-    else fetchProfiles()
+    if (error) toast.error('Hata: ' + error.message)
+    else {
+      toast.success('Rol guncellendi.')
+      fetchProfiles()
+    }
   }
 
   const roleLabels = { admin: 'Admin', editor: 'Editor', teacher: 'Ogretmen' }

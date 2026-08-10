@@ -4,6 +4,7 @@ import { DAYS } from '../utils/timeUtils'
 import SelectField from '../components/SelectField'
 import PageHeader from '../components/PageHeader'
 import PageCard from '../components/PageCard'
+import { useToast } from '../contexts/ToastContext'
 
 export default function ConstraintCalendar() {
   const [teachers, setTeachers] = useState([])
@@ -12,6 +13,7 @@ export default function ConstraintCalendar() {
   const [selectedCells, setSelectedCells] = useState(new Set())
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const toast = useToast()
 
   useEffect(() => {
     fetchTeachers()
@@ -73,7 +75,7 @@ export default function ConstraintCalendar() {
 
     const { error: deleteError } = await supabase.from('teacher_constraints').delete().eq('teacher_id', selectedTeacher)
     if (deleteError) {
-      alert('Hata: ' + deleteError.message)
+      toast.error('Hata: ' + deleteError.message)
       setLoading(false)
       return
     }
@@ -89,14 +91,14 @@ export default function ConstraintCalendar() {
     if (rows.length > 0) {
       const { error: insertError } = await supabase.from('teacher_constraints').insert(rows)
       if (insertError) {
-        alert('Hata: ' + insertError.message)
+        toast.error('Hata: ' + insertError.message)
         setLoading(false)
         return
       }
     }
 
     setLoading(false)
-    alert('Kisitlar kaydedildi.')
+    toast.success('Kısıtlar kaydedildi.')
   }
 
   return (

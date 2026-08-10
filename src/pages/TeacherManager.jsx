@@ -4,6 +4,8 @@ import { supabase } from '../supabaseClient'
 import SelectField from '../components/SelectField'
 import PageHeader from '../components/PageHeader'
 import PageCard from '../components/PageCard'
+import { useToast } from '../contexts/ToastContext'
+import { useConfirm } from '../contexts/ConfirmContext'
 
 export default function TeacherManager() {
   const [teachers, setTeachers] = useState([])
@@ -12,6 +14,8 @@ export default function TeacherManager() {
   const [branchId, setBranchId] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const toast = useToast()
+  const confirmDialog = useConfirm()
 
   useEffect(() => {
     fetchTeachers()
@@ -41,8 +45,9 @@ export default function TeacherManager() {
     setLoading(false)
 
     if (error) {
-      alert('Hata: ' + error.message)
+      toast.error('Ogretmen eklenemedi: ' + error.message)
     } else {
+      toast.success('Ogretmen eklendi.')
       setFullName('')
       setBranchId('')
       fetchTeachers()
@@ -50,15 +55,18 @@ export default function TeacherManager() {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Bu ogretmeni silmek istedigine emin misin?')) return
+    const ok = await confirmDialog('Bu ogretmeni silmek istedigine emin misin? Bu islem geri alinamaz.')
+    if (!ok) return
+
     const { error } = await supabase.from('teachers').delete().eq('id', id)
     if (error) {
       if (error.message.includes('foreign key constraint')) {
-        alert('Bu ogretmen silinemedi cunku ders atamalarinda kayitli. Once "Ders Atamalari" sayfasindan bu ogretmenin atamalarini kaldir.')
+        toast.warning('Bu ogretmen silinemedi cunku ders atamalarinda kayitli. Once atamalarini kaldir.')
       } else {
-        alert('Hata: ' + error.message)
+        toast.error('Silinemedi: ' + error.message)
       }
     } else {
+      toast.success('Ogretmen silindi.')
       fetchTeachers()
     }
   }
