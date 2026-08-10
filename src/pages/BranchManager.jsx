@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Button, Input, Card } from '@heroui/react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '../supabaseClient'
+import PageHeader from '../components/PageHeader'
+import PageCard from '../components/PageCard'
 
 export default function BranchManager() {
   const [branches, setBranches] = useState([])
@@ -45,86 +47,80 @@ export default function BranchManager() {
     else fetchBranches()
   }
 
+  const colors = ['bg-blue-50 text-blue-600', 'bg-violet-50 text-violet-600', 'bg-emerald-50 text-emerald-600', 'bg-amber-50 text-amber-600']
+
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Sube Yonetimi</h1>
-        <p className="text-slate-400 text-sm mt-1">Okuldaki tum subeleri buradan yonet</p>
-      </div>
+    <div className="p-4 md:p-8">
+      <PageHeader title="Subeler" subtitle="Okuldaki tum subeleri buradan yonet" />
 
-      <Card className="p-5 border-0 shadow-soft rounded-2xl mb-6">
-        <form onSubmit={handleAdd} className="flex gap-3 items-end flex-wrap">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500">Sube Adi</label>
-            <Input
-              placeholder="orn: 10-A"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="max-w-[180px]"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500">Sinif Seviyesi</label>
-            <Input
-              placeholder="orn: 10"
-              value={gradeLevel}
-              onChange={(e) => setGradeLevel(e.target.value)}
-              className="max-w-[140px]"
-            />
-          </div>
-          <Button
-            color="primary"
+      <PageCard title="Subeler" description="Ders programi sutunlarinda kullanilan sinif subeleri">
+        <form onSubmit={handleAdd} className="flex gap-3 mb-6">
+          <input
+            placeholder="9-A"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <input
+            placeholder="Sinif seviyesi (orn: 10)"
+            value={gradeLevel}
+            onChange={(e) => setGradeLevel(e.target.value)}
+            className="flex-[2] border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <button
             type="submit"
-            isLoading={loading}
-            className="rounded-xl font-medium"
+            disabled={loading}
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150 shrink-0"
           >
+            <Plus size={16} strokeWidth={2.5} />
             Ekle
-          </Button>
+          </button>
         </form>
-      </Card>
 
-      <div className="flex flex-col gap-2">
-        {fetching && (
-          <div className="flex flex-col gap-2">
+        {fetching ? (
+          <div className="grid md:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-14 bg-slate-50 rounded-xl animate-pulse"></div>
+              <div key={i} className="h-20 bg-slate-50 rounded-xl animate-pulse"></div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-3">
+            {branches.map((b, i) => (
+              <div
+                key={b.id}
+                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors duration-150"
+              >
+                <div className={'w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ' + colors[i % colors.length]}>
+                  {b.name}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-800 text-sm truncate">{b.name}</p>
+                  <p className="text-xs text-slate-400">
+                    {b.grade_level ? b.grade_level + '. Sinif Subesi' : 'Seviye girilmedi'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-200 transition-colors duration-150">
+                    <Pencil size={13} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(b.id)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         )}
-        {!fetching && branches.map((b) => (
-          <Card
-            key={b.id}
-            className="p-4 border-0 shadow-soft shadow-soft-hover rounded-xl flex flex-row justify-between items-center transition-all duration-200"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center text-violet-600 text-sm">
-                🏫
-              </div>
-              <div>
-                <p className="font-medium text-slate-700 text-sm">{b.name}</p>
-                <p className="text-xs text-slate-400">
-                  {b.grade_level ? b.grade_level + '. Sinif Subesi' : 'Sinif seviyesi belirtilmedi'}
-                </p>
-              </div>
-            </div>
-            <Button
-              color="danger"
-              variant="light"
-              size="sm"
-              className="rounded-lg"
-              onClick={() => handleDelete(b.id)}
-            >
-              Sil
-            </Button>
-          </Card>
-        ))}
 
         {!fetching && branches.length === 0 && (
           <div className="text-center py-12">
             <p className="text-slate-400 text-sm">Henuz sube eklenmedi</p>
           </div>
         )}
-      </div>
+      </PageCard>
     </div>
   )
 }

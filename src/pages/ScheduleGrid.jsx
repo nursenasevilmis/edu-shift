@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card } from '@heroui/react'
 import { supabase } from '../supabaseClient'
-import { DAYS } from '../utils/timeUtils'
+import { DAYS, computeBlockState } from '../utils/timeUtils'
 import SelectField from '../components/SelectField'
 
 export default function ScheduleGrid() {
@@ -66,7 +66,9 @@ export default function ScheduleGrid() {
   async function fetchSchedule(branchId) {
     const { data, error } = await supabase
       .from('schedules')
-      .select('*, course_assignments(*, courses(course_name), teachers(full_name))')
+      .select(
+        '*, course_assignments(*, courses(course_name), teachers(full_name)), time_slots(day_of_week, period_number, start_time, end_time)'
+      )
       .eq('branch_id', branchId)
     if (error) console.error(error)
     else setScheduleEntries(data)
@@ -85,8 +87,37 @@ export default function ScheduleGrid() {
     return scheduleEntries.find((s) => s.time_slot_id === slotId)
   }
 
-  function handleDragStart(e, assignment) {
-    e.dataTransfer.setData('assignmentId', String(assignment.id))
+  // assignment_id -> zenginleştirilmiş (day_of_week / period_number eklenmiş) kayıtlar
+  function entriesForAssignment(assignmentId) {
+    return scheduleEntries
+      .filter((s) => String(s.assignment_id) === String(assignmentId))
+      .map((s) => ({
+        ...s,
+        day_of_week: s.time_slots?.day_of_week,
+        period_number: s.time_slots?.period_number,
+      }))
+  }
+
+  // assignment.id -> computeBlockState sonucu (blok yapısı olan atamalar için)
+  const blockStateByAssignment = {}
+  assignments.forEach((a) => {
+    blockStateByAssignment[a.id] = computeBlockState(a.block_pattern, entriesForAssignment(a.id))
+  })
+
+  // Bir schedule kaydının ait olduğu blok (aynı atama + aynı gün + ardışık period) - tekli kayıt da olabilir
+  function findRunForEntry(entry) {
+    const state = blockStateByAssignment[entry.assignment_id]
+    if (!state || !state.hasPattern) return [entry]
+    const allRuns = [...state.placedRuns, ...(state.extraRuns || [])]
+    const run = allRuns.find((r) => r.some((e) => e.id === entry.id))
+    return run || [entry]
+  }
+
+  function handleDragStart(e, assignment, blockSize) {
+    e.dataTransfer.setData(
+      'payload',
+      JSON.stringify({ assignmentId: assignment.id, blockSize: blockSize || 1 })
+    )
   }
 
   function handleDragOver(e, cellKey) {
@@ -102,53 +133,79 @@ export default function ScheduleGrid() {
     e.preventDefault()
     setDragOverCell(null)
 
-    const assignmentId = e.dataTransfer.getData('assignmentId')
-    if (!assignmentId || !slot) return
+    const raw = e.dataTransfer.getData('payload')
+    if (!raw || !slot) return
 
-    const existingEntry = findScheduleEntry(slot.id)
-    if (existingEntry) {
-      alert('Bu hucre dolu. Once mevcut dersi kaldir.')
+    let assignmentId, blockSize
+    try {
+      const parsed = JSON.parse(raw)
+      assignmentId = String(parsed.assignmentId)
+      blockSize = Number(parsed.blockSize) || 1
+    } catch {
       return
     }
 
     const assignment = assignments.find((a) => String(a.id) === assignmentId)
     if (!assignment) return
 
-    const currentCount = scheduleEntries.filter(
-      (s) => String(s.assignment_id) === assignmentId
-    ).length
+    // Bloğun yerleşeceği ardışık slotları belirle (bırakılan hücreden itibaren aynı gün, ileri doğru)
+    const targetSlots = []
+    for (let p = slot.period_number; p < slot.period_number + blockSize; p++) {
+      const s = getSlotFor(slot.day_of_week, p)
+      if (!s) {
+        alert('Bu gunde blok icin yeterli ardisik ders saati yok (' + blockSize + ' saat).')
+        return
+      }
+      targetSlots.push(s)
+    }
 
-    if (currentCount >= assignment.weekly_hours) {
-      alert('Bu ders icin haftalik saat limiti (' + assignment.weekly_hours + ' saat) doldu.')
+    // Hucrelerden herhangi biri dolu mu?
+    const occupied = targetSlots.some((s) => findScheduleEntry(s.id))
+    if (occupied) {
+      alert('Bu hucrelerden biri dolu. Once mevcut dersi kaldir.')
       return
     }
 
+    // Haftalık saat limiti kontrolü
+    const currentCount = entriesForAssignment(assignmentId).length
+    if (currentCount + blockSize > assignment.weekly_hours) {
+      alert('Bu ders icin haftalik saat limiti (' + assignment.weekly_hours + ' saat) asilir.')
+      return
+    }
+
+    // Öğretmen kısıt kontrolü (bloktaki tüm saatler için)
     const teacherId = assignment.teacher_id
-    const isBlocked = constraints.some((c) => {
-      if (String(c.teacher_id) !== String(teacherId)) return false
-      if (c.day_of_week !== slot.day_of_week) return false
-      const cStart = c.start_time.slice(0, 5)
-      const cEnd = c.end_time.slice(0, 5)
-      const slotStart = slot.start_time.slice(0, 5)
-      return slotStart >= cStart && slotStart < cEnd
-    })
+    const isBlocked = targetSlots.some((s) =>
+      constraints.some((c) => {
+        if (String(c.teacher_id) !== String(teacherId)) return false
+        if (c.day_of_week !== s.day_of_week) return false
+        const cStart = c.start_time.slice(0, 5)
+        const cEnd = c.end_time.slice(0, 5)
+        const slotStart = s.start_time.slice(0, 5)
+        return slotStart >= cStart && slotStart < cEnd
+      })
+    )
 
     if (isBlocked) {
-      alert('Bu ogretmen bu gun ve saatte musait degil.')
+      alert('Bu ogretmen bu gun ve saatte(lerde) musait degil.')
       return
     }
 
-    const { error } = await supabase.from('schedules').insert({
+    const rows = targetSlots.map((s) => ({
       branch_id: selectedBranch,
       assignment_id: assignmentId,
-      time_slot_id: slot.id,
-    })
+      time_slot_id: s.id,
+    }))
+
+    // Tek bir INSERT ile toplu ekleme yapılır; DB kısıtlarından biri ihlal edilirse
+    // Postgres tüm satırları birlikte geri alır (atomik davranış).
+    const { error } = await supabase.from('schedules').insert(rows)
 
     if (error) {
       if (error.message.includes('unique_teacher_per_slot')) {
-        alert('Cakisma! Bu ogretmen bu saatte baska bir derste.')
+        alert('Cakisma! Bu ogretmen bu saatte(lerde) baska bir derste.')
       } else if (error.message.includes('unique_branch_per_slot')) {
-        alert('Cakisma! Bu sube bu saatte baska bir derste.')
+        alert('Cakisma! Bu sube bu saatte(lerde) baska bir derste.')
       } else if (error.message.includes('Haftalık saat limiti')) {
         alert('Haftalik saat limiti doldu.')
       } else if (error.message.includes('müsait değil')) {
@@ -162,8 +219,12 @@ export default function ScheduleGrid() {
   }
 
   async function handleRemove(entry) {
-    if (!confirm('Bu dersi programdan kaldirmak istiyor musun?')) return
-    const { error } = await supabase.from('schedules').delete().eq('id', entry.id)
+    const run = findRunForEntry(entry)
+    const label = run.length > 1 ? 'Bu ' + run.length + ' saatlik blogu' : 'Bu dersi'
+    if (!confirm(label + ' programdan kaldirmak istiyor musun?')) return
+
+    const ids = run.map((r) => r.id)
+    const { error } = await supabase.from('schedules').delete().in('id', ids)
     if (error) alert('Hata: ' + error.message)
     else fetchSchedule(selectedBranch)
   }
@@ -191,28 +252,63 @@ export default function ScheduleGrid() {
           <p className="text-xs text-slate-400 mb-4">Karti surukleyip tabloya birak</p>
           <div className="flex flex-col gap-2">
             {assignments.map((a) => {
-              const placedCount = scheduleEntries.filter(
-                (s) => String(s.assignment_id) === String(a.id)
-              ).length
-              const remaining = a.weekly_hours - placedCount
+              const placedCount = entriesForAssignment(a.id).length
+              const state = blockStateByAssignment[a.id]
 
+              // Blok yapısı yoksa: eski davranış, tek saatlik kart sürüklenir
+              if (!state?.hasPattern) {
+                const remaining = a.weekly_hours - placedCount
+                return (
+                  <div
+                    key={a.id}
+                    draggable={remaining > 0}
+                    onDragStart={(e) => handleDragStart(e, a, 1)}
+                    className={
+                      'p-3 rounded-xl border transition-all duration-150 ' +
+                      (remaining > 0
+                        ? 'cursor-grab active:cursor-grabbing bg-blue-50 border-blue-100 hover:shadow-soft hover:-translate-y-0.5'
+                        : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed')
+                    }
+                  >
+                    <p className="font-medium text-sm text-slate-700">{a.courses?.course_name}</p>
+                    <p className="text-xs text-slate-500">{a.teachers?.full_name}</p>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      {placedCount}/{a.weekly_hours} saat
+                    </p>
+                  </div>
+                )
+              }
+
+              // Blok yapısı var: her blok parçası (2, 3 gibi) ayrı ayrı sürüklenebilir kart olarak gösterilir
               return (
-                <div
-                  key={a.id}
-                  draggable={remaining > 0}
-                  onDragStart={(e) => handleDragStart(e, a)}
-                  className={
-                    'p-3 rounded-xl border transition-all duration-150 ' +
-                    (remaining > 0
-                      ? 'cursor-grab active:cursor-grabbing bg-blue-50 border-blue-100 hover:shadow-soft hover:-translate-y-0.5'
-                      : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed')
-                  }
-                >
+                <div key={a.id} className="p-3 rounded-xl border bg-indigo-50 border-indigo-100">
                   <p className="font-medium text-sm text-slate-700">{a.courses?.course_name}</p>
-                  <p className="text-xs text-slate-500">{a.teachers?.full_name}</p>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    {placedCount}/{a.weekly_hours} saat {a.block_pattern ? '(' + a.block_pattern + ')' : ''}
+                  <p className="text-xs text-slate-500 mb-2">{a.teachers?.full_name}</p>
+                  <p className="text-[11px] text-slate-400 mb-2">
+                    {placedCount}/{a.weekly_hours} saat &middot; blok: {a.block_pattern}
                   </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {state.remainingBlocks.map((size, idx) => (
+                      <div
+                        key={'r' + idx}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, a, size)}
+                        title={size + ' saatlik ardisik blok - surukle'}
+                        className="cursor-grab active:cursor-grabbing px-2.5 py-1.5 rounded-lg bg-white border border-indigo-200 text-xs font-medium text-indigo-700 hover:shadow-soft hover:-translate-y-0.5 transition-all duration-150"
+                      >
+                        {size} saat
+                      </div>
+                    ))}
+                    {state.placedRuns.map((run, idx) => (
+                      <div
+                        key={'p' + idx}
+                        title="Yerlestirildi"
+                        className="px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700"
+                      >
+                        ✓ {run.length} saat
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )
             })}

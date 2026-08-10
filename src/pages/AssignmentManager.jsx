@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Button, Input, Card } from '@heroui/react'
+import { Button, Input } from '@heroui/react'
 import { supabase } from '../supabaseClient'
 import SelectField from '../components/SelectField'
+import PageHeader from '../components/PageHeader'
+import PageCard from '../components/PageCard'
+import { generateBlockPatterns } from '../utils/blockPatterns'
 
 export default function AssignmentManager() {
     const [assignments, setAssignments] = useState([])
@@ -21,29 +24,27 @@ export default function AssignmentManager() {
         fetchAll()
     }, [])
 
+    // Haftalik saat degistikce blok secimini sifirla (eski secim yeni saatle uyumsuz olabilir)
+    useEffect(() => {
+        setBlockPattern('')
+    }, [weeklyHours])
+
     async function fetchAll() {
         setFetching(true)
         const results = await Promise.all([
-            supabase
-                .from('course_assignments')
-                .select('*, courses(course_name), teachers(full_name), branches(name)')
-                .order('id'),
+            supabase.from('course_assignments').select('*, courses(course_name), teachers(full_name), branches(name)').order('id'),
             supabase.from('courses').select('*').order('id'),
             supabase.from('teachers').select('*').order('id'),
             supabase.from('branches').select('*').order('id'),
         ])
 
         const a = results[0]
-        const c = results[1]
-        const t = results[2]
-        const b = results[3]
-
         if (a.error) console.error('Atamalar alinamadi:', a.error)
         else setAssignments(a.data)
 
-        setCourses(c.data || [])
-        setTeachers(t.data || [])
-        setBranches(b.data || [])
+        setCourses(results[1].data || [])
+        setTeachers(results[2].data || [])
+        setBranches(results[3].data || [])
         setFetching(false)
     }
 
@@ -62,7 +63,6 @@ export default function AssignmentManager() {
             weekly_hours: Number(weeklyHours),
             block_pattern: blockPattern || null,
         })
-
         setLoading(false)
 
         if (error) {
@@ -84,16 +84,13 @@ export default function AssignmentManager() {
         else fetchAll()
     }
 
-    return (
-        <div className="p-8 max-w-4xl mx-auto">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Ders Atamalari</h1>
-                <p className="text-slate-400 text-sm mt-1">
-                    Hangi ogretmenin hangi dersi hangi subede okutacagini tanimla
-                </p>
-            </div>
+    const blockOptions = generateBlockPatterns(weeklyHours).map((p) => ({ value: p, label: p }))
 
-            <Card className="p-5 border-0 shadow-soft rounded-2xl mb-6">
+    return (
+        <div className="p-4 md:p-8">
+            <PageHeader title="Ders Atamalari" subtitle="Hangi ogretmenin hangi dersi hangi subede okutacagini tanimla" />
+
+            <PageCard title="Yeni Atama" className="mb-6">
                 <form onSubmit={handleAdd} className="flex gap-3 items-end flex-wrap">
                     <SelectField
                         label="Ders"
@@ -133,45 +130,33 @@ export default function AssignmentManager() {
                         />
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-slate-500">Blok Yapisi</label>
-                        <Input
-                            placeholder="orn: 2+3"
-                            value={blockPattern}
-                            onChange={(e) => setBlockPattern(e.target.value)}
-                            className="w-32"
-                        />
-                    </div>
+                    <SelectField
+                        label="Blok Yapisi"
+                        value={blockPattern}
+                        onChange={setBlockPattern}
+                        placeholder={weeklyHours ? '-- Sec --' : 'Once saat gir'}
+                        className="min-w-[160px]"
+                        options={blockOptions}
+                    />
 
-                    <Button
-                        color="primary"
-                        type="submit"
-                        isLoading={loading}
-                        className="rounded-xl font-medium"
-                    >
+                    <Button color="primary" type="submit" isLoading={loading} className="rounded-xl font-medium">
                         Ekle
                     </Button>
                 </form>
-            </Card>
+            </PageCard>
 
-            <div className="flex flex-col gap-2">
-                {fetching && (
-                    <div className="flex flex-col gap-2">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-16 bg-slate-50 rounded-xl animate-pulse"></div>
-                        ))}
-                    </div>
-                )}
+            <PageCard title="Tum Atamalar" description={assignments.length + ' atama kayitli'}>
+                <div className="flex flex-col gap-2">
+                    {fetching && (
+                        <div className="flex flex-col gap-2">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="h-16 bg-slate-50 rounded-xl animate-pulse"></div>
+                            ))}
+                        </div>
+                    )}
 
-                {!fetching && assignments.map((a) => (
-                    <Card
-                        key={a.id}
-                        className="p-4 border-0 shadow-soft shadow-soft-hover rounded-xl flex flex-row justify-between items-center transition-all duration-200"
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 text-sm">
-                                📋
-                            </div>
+                    {!fetching && assignments.map((a) => (
+                        <div key={a.id} className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors duration-150">
                             <div>
                                 <p className="font-medium text-slate-700 text-sm">
                                     {a.courses?.course_name}
@@ -182,25 +167,22 @@ export default function AssignmentManager() {
                                     {a.branches?.name} — {a.weekly_hours} saat{a.block_pattern ? ', ' + a.block_pattern : ''}
                                 </p>
                             </div>
+                            <button
+                                onClick={() => handleDelete(a.id)}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
+                            >
+                                ✕
+                            </button>
                         </div>
-                        <Button
-                            color="danger"
-                            variant="light"
-                            size="sm"
-                            className="rounded-lg"
-                            onClick={() => handleDelete(a.id)}
-                        >
-                            Sil
-                        </Button>
-                    </Card>
-                ))}
+                    ))}
 
-                {!fetching && assignments.length === 0 && (
-                    <div className="text-center py-12">
-                        <p className="text-slate-400 text-sm">Henuz atama yapilmadi</p>
-                    </div>
-                )}
-            </div>
+                    {!fetching && assignments.length === 0 && (
+                        <div className="text-center py-12">
+                            <p className="text-slate-400 text-sm">Henuz atama yapilmadi</p>
+                        </div>
+                    )}
+                </div>
+            </PageCard>
         </div>
     )
 }
