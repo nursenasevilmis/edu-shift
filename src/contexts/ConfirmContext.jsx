@@ -40,7 +40,7 @@ export function ConfirmProvider({ children }) {
                                 onClick={() => handleClose(false)}
                                 className="px-4 py-2 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors duration-150"
                             >
-                                Vazgec
+                                Vazgeç
                             </button>
                             <button
                                 onClick={() => handleClose(true)}

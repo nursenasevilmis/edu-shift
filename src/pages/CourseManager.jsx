@@ -15,7 +15,6 @@ export default function CourseManager() {
   const toast = useToast()
   const confirmDialog = useConfirm()
 
-
   useEffect(() => {
     fetchCourses()
   }, [])
@@ -23,7 +22,7 @@ export default function CourseManager() {
   async function fetchCourses() {
     setFetching(true)
     const { data, error } = await supabase.from('courses').select('*').order('id')
-    if (error) console.error('Dersler alinamadi:', error)
+    if (error) console.error('Dersler alınamadı:', error)
     else setCourses(data)
     setFetching(false)
   }
@@ -47,9 +46,9 @@ export default function CourseManager() {
   }
 
   async function handleDelete(id) {
-    const ok = await confirmDialog('Bu dersi silmek istedigine emin misin? Bu islem geri alinamaz.')
+    const ok = await confirmDialog('Bu dersi silmek istediğine emin misin? Bu işlem geri alınamaz.')
     if (!ok) return
-  
+
     const { error } = await supabase.from('courses').delete().eq('id', id)
     if (error) toast.error('Silinemedi: ' + error.message)
     else {
@@ -62,18 +61,18 @@ export default function CourseManager() {
 
   return (
     <div className="p-4 md:p-8">
-      <PageHeader title="Dersler" subtitle="Okulda okutulan tum dersleri buradan yonet" />
+      <PageHeader title="Dersler" subtitle="Okulda okutulan tüm dersleri buradan yönet" />
 
-      <PageCard title="Dersler" description="Ogretmen ve blok atamalari Ders Atamalari sayfasindan yapilir">
+      <PageCard title="Dersler" description="Öğretmen ve blok atamaları Ders Atamaları sayfasından yapılır">
         <form onSubmit={handleAdd} className="flex gap-3 mb-6">
           <input
-            placeholder="KOD (orn: MAT101)"
+            placeholder="KOD (örn: MAT101)"
             value={courseCode}
             onChange={(e) => setCourseCode(e.target.value)}
             className="w-40 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <input
-            placeholder="Ders adi (orn: Matematik)"
+            placeholder="Ders adı (örn: Matematik)"
             value={courseName}
             onChange={(e) => setCourseName(e.target.value)}
             className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -99,7 +98,7 @@ export default function CourseManager() {
             <thead>
               <tr className="border-b border-slate-100">
                 <th className="text-left pb-3 text-[11px] tracking-wider font-semibold text-slate-400">DERS</th>
-                <th className="text-right pb-3 text-[11px] tracking-wider font-semibold text-slate-400">ISLEM</th>
+                <th className="text-right pb-3 text-[11px] tracking-wider font-semibold text-slate-400">İŞLEM</th>
               </tr>
             </thead>
             <tbody>
@@ -135,7 +134,7 @@ export default function CourseManager() {
 
         {!fetching && courses.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-slate-400 text-sm">Henuz ders eklenmedi</p>
+            <p className="text-slate-400 text-sm">Henüz ders eklenmedi</p>
           </div>
         )}
       </PageCard>

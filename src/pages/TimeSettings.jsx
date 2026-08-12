@@ -32,8 +32,8 @@ export default function TimeSettings() {
 
   async function handleSave() {
     const ok = await confirmDialog({
-      title: 'Zaman ayarlarini guncelle',
-      message: 'Kaydedersen tum haftalik program saatleri yeniden hesaplanacak. Devam edilsin mi?',
+      title: 'Zaman ayarlarını güncelle',
+      message: 'Kaydedersen tüm haftalık program saatleri yeniden hesaplanacak. Devam edilsin mi?',
       confirmLabel: 'Kaydet',
     })
     if (!ok) return
@@ -58,7 +58,7 @@ export default function TimeSettings() {
 
       if (updateError) throw updateError
       await syncTimeSlots(settings)
-      toast.success('Ayarlar kaydedildi ve program saatleri guncellendi.')
+      toast.success('Ayarlar kaydedildi ve program saatleri güncellendi.')
     } catch (err) {
       toast.error('Hata: ' + err.message)
     }
@@ -82,11 +82,11 @@ export default function TimeSettings() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Zaman ve Parametreler</h1>
-          <p className="text-slate-400 text-sm mt-1">Okul gununun ritmini ve kapasitesini ayarla</p>
+          <p className="text-slate-400 text-sm mt-1">Okul gününün ritmini ve kapasitesini ayarla</p>
         </div>
         <span className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
           <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-          Sistem calisiyor
+          Sistem çalışıyor
         </span>
       </div>
 
@@ -94,16 +94,16 @@ export default function TimeSettings() {
         {/* Sol: gunun ritmi */}
         <div className="md:col-span-2 bg-white rounded-2xl shadow-soft border border-slate-50 p-6">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="font-semibold text-slate-700">Okul Gunu Ritmi</h2>
+            <h2 className="font-semibold text-slate-700">Okul Günü Ritmi</h2>
             <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
               <Clock size={15} className="text-blue-500" />
             </div>
           </div>
-          <p className="text-xs text-slate-400 mb-5">Parametreler her program dogrulamasinda uygulanir</p>
+          <p className="text-xs text-slate-400 mb-5">Parametreler her program doğrulamasında uygulanır</p>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Ilk Ders Baslangici</label>
+              <label className="text-xs font-medium text-slate-500">İlk Ders Başlangıcı</label>
               <Input
                 type="time"
                 value={settings.lesson_start?.slice(0, 5)}
@@ -111,37 +111,37 @@ export default function TimeSettings() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Ders Suresi (dakika)</label>
+              <label className="text-xs font-medium text-slate-500">Ders Süresi (dakika)</label>
               <Input
                 type="number"
-                placeholder="orn: 40"
+                placeholder="örn: 40"
                 value={settings.lesson_duration}
                 onChange={(e) => updateField('lesson_duration', e.target.value)}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Kisa Teneffus (dakika)</label>
+              <label className="text-xs font-medium text-slate-500">Kısa Teneffüs (dakika)</label>
               <Input
                 type="number"
-                placeholder="orn: 10"
+                placeholder="örn: 10"
                 value={settings.break_duration}
                 onChange={(e) => updateField('break_duration', e.target.value)}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Ogle Arasi (dakika)</label>
+              <label className="text-xs font-medium text-slate-500">Öğle Arası (dakika)</label>
               <Input
                 type="number"
-                placeholder="orn: 45"
+                placeholder="örn: 45"
                 value={settings.lunch_duration}
                 onChange={(e) => updateField('lunch_duration', e.target.value)}
               />
             </div>
             <div className="flex flex-col gap-1.5 col-span-2">
-              <label className="text-xs font-medium text-slate-500">Ogle Arasi Kacinci Dersten Sonra</label>
+              <label className="text-xs font-medium text-slate-500">Öğle Arası Kaçıncı Dersten Sonra</label>
               <Input
                 type="number"
-                placeholder="orn: 5"
+                placeholder="örn: 5"
                 value={settings.lunch_after_period}
                 onChange={(e) => updateField('lunch_after_period', e.target.value)}
                 className="max-w-[200px]"
@@ -150,7 +150,7 @@ export default function TimeSettings() {
           </div>
 
           <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-50">
-            <p className="text-xs text-slate-400">Degisiklikler blok yerlestirilmeden once uygulanir</p>
+            <p className="text-xs text-slate-400">Değişiklikler blok yerleştirilmeden önce uygulanır</p>
             <Button color="primary" onClick={handleSave} isLoading={loading} className="rounded-xl font-medium">
               Ritmi Kaydet
             </Button>
@@ -159,15 +159,15 @@ export default function TimeSettings() {
 
         {/* Sag: gunluk kapasite */}
         <div className="bg-white rounded-2xl shadow-soft border border-slate-50 p-6">
-          <h2 className="font-semibold text-slate-700 mb-1">Gunluk Kapasite</h2>
-          <p className="text-xs text-slate-400 mb-5">Her okul gunu icin maksimum ders saati</p>
+          <h2 className="font-semibold text-slate-700 mb-1">Günlük Kapasite</h2>
+          <p className="text-xs text-slate-400 mb-5">Her okul günü için maksimum ders saati</p>
 
           <div className="flex flex-col gap-3">
             {DAYS.map((day) => (
               <div key={day.key} className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
                 <div>
                   <p className="text-sm font-medium text-slate-700">{day.label}</p>
-                  <p className="text-xs text-slate-400">{settings.lesson_start?.slice(0, 5)} baslangic</p>
+                  <p className="text-xs text-slate-400">{settings.lesson_start?.slice(0, 5)} başlangıç</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Input

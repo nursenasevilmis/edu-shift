@@ -157,7 +157,7 @@ export default function ScheduleGrid() {
     for (let p = slot.period_number; p < slot.period_number + blockSize; p++) {
       const s = getSlotFor(slot.day_of_week, p)
       if (!s) {
-        toast.warning('Bu gunde blok icin yeterli ardisik ders saati yok (' + blockSize + ' saat).')
+        toast.warning('Bu günde blok için yeterli ardışık ders saati yok (' + blockSize + ' saat).')
         return
       }
       targetSlots.push(s)
@@ -166,14 +166,14 @@ export default function ScheduleGrid() {
     // Hucrelerden herhangi biri dolu mu?
     const occupied = targetSlots.some((s) => findScheduleEntry(s.id))
     if (occupied) {
-      toast.warning('Bu hucrelerden biri dolu. Once mevcut dersi kaldir.')
+      toast.warning('Bu hücrelerden biri dolu. Önce mevcut dersi kaldır.')
       return
     }
 
     // Haftalık saat limiti kontrolü
     const currentCount = entriesForAssignment(assignmentId).length
     if (currentCount + blockSize > assignment.weekly_hours) {
-      toast.warning('Bu ders icin haftalik saat limiti (' + assignment.weekly_hours + ' saat) asilir.')
+      toast.warning('Bu ders için haftalık saat limiti (' + assignment.weekly_hours + ' saat) aşılır.')
       return
     }
 
@@ -191,7 +191,7 @@ export default function ScheduleGrid() {
     )
 
     if (isBlocked) {
-      toast.warning('Bu ogretmen bu gun ve saatte(lerde) musait degil.')
+      toast.warning('Bu öğretmen bu gün ve saatte(lerde) müsait değil.')
       return
     }
 
@@ -207,33 +207,33 @@ export default function ScheduleGrid() {
 
     if (error) {
       if (error.message.includes('unique_teacher_per_slot')) {
-        toast.error('Cakisma! Bu ogretmen bu saatte(lerde) baska bir derste.')
+        toast.error('Çakışma! Bu öğretmen bu saatte(lerde) başka bir derste.')
       } else if (error.message.includes('unique_branch_per_slot')) {
-        toast.error('Cakisma! Bu sube bu saatte(lerde) baska bir derste.')
+        toast.error('Çakışma! Bu şube bu saatte(lerde) başka bir derste.')
       } else if (error.message.includes('Haftalık saat limiti')) {
-        toast.warning('Haftalik saat limiti doldu.')
+        toast.warning('Haftalık saat limiti doldu.')
       } else if (error.message.includes('müsait değil')) {
-        toast.warning('Bu ogretmen bu gun ve saatte musait degil.')
+        toast.warning('Bu öğretmen bu gün ve saatte müsait değil.')
       } else {
         toast.error('Hata: ' + error.message)
       }
     } else {
-      toast.success('Blok yerlestirildi.')
+      toast.success('Blok yerleştirildi.')
       fetchSchedule(selectedBranch)
     }
   }
 
   async function handleRemove(entry) {
     const run = findRunForEntry(entry)
-    const label = run.length > 1 ? 'Bu ' + run.length + ' saatlik blogu' : 'Bu dersi'
-    const ok = await confirmDialog(label + ' programdan kaldirmak istiyor musun?')
+    const label = run.length > 1 ? 'Bu ' + run.length + ' saatlik bloğu' : 'Bu dersi'
+    const ok = await confirmDialog(label + ' programdan kaldırmak istiyor musun?')
     if (!ok) return
 
     const ids = run.map((r) => r.id)
     const { error } = await supabase.from('schedules').delete().in('id', ids)
     if (error) toast.error('Hata: ' + error.message)
     else {
-      toast.success('Programdan kaldirildi.')
+      toast.success('Programdan kaldırıldı.')
       fetchSchedule(selectedBranch)
     }
   }
@@ -241,13 +241,13 @@ export default function ScheduleGrid() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Program Olusturucu</h1>
-        <p className="text-slate-400 text-sm mt-1">Dersleri surukleyip haftalik tabloya yerlestir</p>
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Program Oluşturucu</h1>
+        <p className="text-slate-400 text-sm mt-1">Dersleri sürükleyip haftalık tabloya yerleştir</p>
       </div>
 
       <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4 flex items-center gap-4">
         <SelectField
-          label="Sube"
+          label="Şube"
           value={selectedBranch}
           onChange={setSelectedBranch}
           className="min-w-[180px]"
@@ -257,8 +257,8 @@ export default function ScheduleGrid() {
 
       <div className="flex gap-4">
         <Card className="p-5 border-0 shadow-soft rounded-2xl w-64 shrink-0 h-fit">
-          <h2 className="font-semibold text-sm text-slate-700 mb-1">Dersler ve Ogretmenler</h2>
-          <p className="text-xs text-slate-400 mb-4">Karti surukleyip tabloya birak</p>
+          <h2 className="font-semibold text-sm text-slate-700 mb-1">Dersler ve Öğretmenler</h2>
+          <p className="text-xs text-slate-400 mb-4">Kartı sürükleyip tabloya bırak</p>
           <div className="flex flex-col gap-2">
             {assignments.map((a) => {
               const placedCount = entriesForAssignment(a.id).length
@@ -302,7 +302,7 @@ export default function ScheduleGrid() {
                         key={'r' + idx}
                         draggable
                         onDragStart={(e) => handleDragStart(e, a, size)}
-                        title={size + ' saatlik ardisik blok - surukle'}
+                        title={size + ' saatlik ardışık blok - sürükle'}
                         className="cursor-grab active:cursor-grabbing px-2.5 py-1.5 rounded-lg bg-white border border-indigo-200 text-xs font-medium text-indigo-700 hover:shadow-soft hover:-translate-y-0.5 transition-all duration-150"
                       >
                         {size} saat
@@ -311,7 +311,7 @@ export default function ScheduleGrid() {
                     {state.placedRuns.map((run, idx) => (
                       <div
                         key={'p' + idx}
-                        title="Yerlestirildi"
+                        title="Yerleştirildi"
                         className="px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700"
                       >
                         ✓ {run.length} saat
@@ -322,7 +322,7 @@ export default function ScheduleGrid() {
               )
             })}
             {assignments.length === 0 && (
-              <p className="text-xs text-slate-400">Bu sube icin atama yok.</p>
+              <p className="text-xs text-slate-400">Bu şube için atama yok.</p>
             )}
           </div>
         </Card>

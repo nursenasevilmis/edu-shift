@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Card, Button } from '@heroui/react'
+import { Download } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabaseClient'
 import { DAYS } from '../utils/timeUtils'
+import { useToast } from '../contexts/ToastContext'
 
 export default function TeacherPanel() {
   const { profile, signOut, user } = useAuth()
@@ -10,6 +12,9 @@ export default function TeacherPanel() {
   const [scheduleEntries, setScheduleEntries] = useState([])
   const [timeSlots, setTimeSlots] = useState([])
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
+  const tableRef = useRef(null)
+  const toast = useToast()
 
   useEffect(() => {
     if (user) fetchTeacherAndSchedule()
@@ -63,6 +68,45 @@ export default function TeacherPanel() {
     return scheduleEntries.find((e) => e.time_slot_id === slotId)
   }
 
+  async function handleDownloadPdf() {
+    if (!tableRef.current) return
+    setExporting(true)
+
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default
+      const { jsPDF } = await import('jspdf')
+
+      const canvas = await html2canvas(tableRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+      })
+
+      const imgData = canvas.toDataURL('image/png')
+
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+
+      const imgWidth = pageWidth - 20
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+      const finalHeight = Math.min(imgHeight, pageHeight - 20)
+      const finalWidth = (canvas.width * finalHeight) / canvas.height
+
+      const marginX = (pageWidth - finalWidth) / 2
+      const marginY = (pageHeight - finalHeight) / 2
+
+      pdf.addImage(imgData, 'PNG', marginX, marginY, finalWidth, finalHeight)
+      pdf.save(teacherRecord.full_name.replace(/\s+/g, '_') + '_program.pdf')
+
+      toast.success('Program PDF olarak indirildi.')
+    } catch (err) {
+      console.error(err)
+      toast.error('PDF olusturulamadi: ' + err.message)
+    }
+    setExporting(false)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 p-8">
@@ -93,24 +137,40 @@ export default function TeacherPanel() {
     <div className="min-h-screen bg-slate-50">
       <div className="flex justify-between items-center p-6 bg-white border-b border-slate-100">
         <div>
-          <h1 className="text-xl font-bold text-slate-800">Programim</h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            {teacherRecord.full_name} {teacherRecord.branches?.name && '— ' + teacherRecord.branches.name}
-          </p>
+
         </div>
-        <Button
-          color="danger"
-          variant="light"
-          size="sm"
-          onClick={signOut}
-          className="rounded-xl"
-        >
-          Cikis Yap
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            color="primary"
+            variant="flat"
+            size="sm"
+            onClick={handleDownloadPdf}
+            isLoading={exporting}
+            className="rounded-xl"
+          >
+            <Download size={15} className="mr-1" />
+            PDF İndir
+          </Button>
+          <Button
+            color="danger"
+            variant="light"
+            size="sm"
+            onClick={signOut}
+            className="rounded-xl"
+          >
+            Çıkış Yap
+          </Button>
+        </div>
       </div>
 
       <div className="p-8 max-w-6xl mx-auto">
-        <Card className="p-5 border-0 shadow-soft rounded-2xl overflow-x-auto">
+        <Card className="p-5 border-0 shadow-soft rounded-2xl overflow-x-auto" ref={tableRef}>
+          <div className="mb-4">
+            <p className="text-lg font-bold text-slate-800">{teacherRecord.full_name}</p>
+            <p className="text-sm text-slate-400">
+              Haftalık Ders Programı {teacherRecord.branches?.name && '— ' + teacherRecord.branches.name}
+            </p>
+          </div>
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>

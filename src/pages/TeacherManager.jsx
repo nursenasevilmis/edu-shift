@@ -25,14 +25,14 @@ export default function TeacherManager() {
   async function fetchTeachers() {
     setFetching(true)
     const { data, error } = await supabase.from('teachers').select('*, branches(name)').order('id')
-    if (error) console.error('Ogretmenler alinamadi:', error)
+    if (error) console.error('Öğretmenler alınamadı:', error)
     else setTeachers(data)
     setFetching(false)
   }
 
   async function fetchBranches() {
     const { data, error } = await supabase.from('branches').select('*').order('id')
-    if (error) console.error('Subeler alinamadi:', error)
+    if (error) console.error('Şubeler alınamadı:', error)
     else setBranches(data)
   }
 
@@ -45,9 +45,9 @@ export default function TeacherManager() {
     setLoading(false)
 
     if (error) {
-      toast.error('Ogretmen eklenemedi: ' + error.message)
+      toast.error('Öğretmen eklenemedi: ' + error.message)
     } else {
-      toast.success('Ogretmen eklendi.')
+      toast.success('Öğretmen eklendi.')
       setFullName('')
       setBranchId('')
       fetchTeachers()
@@ -55,18 +55,18 @@ export default function TeacherManager() {
   }
 
   async function handleDelete(id) {
-    const ok = await confirmDialog('Bu ogretmeni silmek istedigine emin misin? Bu islem geri alinamaz.')
+    const ok = await confirmDialog('Bu öğretmeni silmek istediğine emin misin? Bu işlem geri alınamaz.')
     if (!ok) return
 
     const { error } = await supabase.from('teachers').delete().eq('id', id)
     if (error) {
       if (error.message.includes('foreign key constraint')) {
-        toast.warning('Bu ogretmen silinemedi cunku ders atamalarinda kayitli. Once atamalarini kaldir.')
+        toast.warning('Bu öğretmen silinemedi çünkü ders atamalarında kayıtlı. Önce atamalarını kaldır.')
       } else {
         toast.error('Silinemedi: ' + error.message)
       }
     } else {
-      toast.success('Ogretmen silindi.')
+      toast.success('Öğretmen silindi.')
       fetchTeachers()
     }
   }
@@ -79,9 +79,9 @@ export default function TeacherManager() {
 
   return (
     <div className="p-4 md:p-8">
-      <PageHeader title="Ogretmenler" subtitle="Okuldaki tum ogretmen profillerini buradan yonet" />
+      <PageHeader title="Öğretmenler" subtitle="Okuldaki tüm öğretmen profillerini buradan yönet" />
 
-      <PageCard title="Ogretmen Profilleri" description="Profiller, ogretmen sahipligi ve kisit tanimlari icin temel kaynaktir">
+      <PageCard title="Öğretmen Profilleri" description="Profiller, öğretmen sahipliği ve kısıt tanımları için temel kaynaktır">
         <form onSubmit={handleAdd} className="flex gap-3 mb-6 flex-wrap">
           <input
             placeholder="Ad Soyad"
@@ -92,7 +92,7 @@ export default function TeacherManager() {
           <SelectField
             value={branchId}
             onChange={setBranchId}
-            placeholder="Sube (opsiyonel)"
+            placeholder="Şube (opsiyonel)"
             className="min-w-[160px]"
             options={branches.map((b) => ({ value: b.id, label: b.name }))}
           />
@@ -114,7 +114,7 @@ export default function TeacherManager() {
           </div>
         ) : teachers.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-400 text-sm">Henuz ogretmen eklenmedi</p>
+            <p className="text-slate-400 text-sm">Henüz öğretmen eklenmedi</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-3">
@@ -126,7 +126,7 @@ export default function TeacherManager() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-800 text-sm truncate">{t.full_name}</p>
                   <p className="text-xs text-slate-400">
-                    {t.branches?.name ? t.branches.name + ' subesi' : 'Subeye bagli degil'}
+                    {t.branches?.name ? t.branches.name + ' şubesi' : 'Şubeye bağlı değil'}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">

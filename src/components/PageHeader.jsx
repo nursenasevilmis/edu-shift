@@ -9,7 +9,7 @@ export default function PageHeader({ title, subtitle, action }) {
                 {action}
                 <span className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    Sistem calisiyor
+                    Sistem çalışıyor
                 </span>
             </div>
         </div>

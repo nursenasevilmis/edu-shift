@@ -22,7 +22,7 @@ export default function BranchManager() {
   async function fetchBranches() {
     setFetching(true)
     const { data, error } = await supabase.from('branches').select('*').order('id')
-    if (error) console.error('Subeler alinamadi:', error)
+    if (error) console.error('Şubeler alınamadı:', error)
     else setBranches(data)
     setFetching(false)
   }
@@ -36,9 +36,9 @@ export default function BranchManager() {
     setLoading(false)
 
     if (error) {
-      toast.error('Sube eklenemedi: ' + error.message)
+      toast.error('Şube eklenemedi: ' + error.message)
     } else {
-      toast.success('Sube eklendi.')
+      toast.success('Şube eklendi.')
       setName('')
       setGradeLevel('')
       fetchBranches()
@@ -46,13 +46,13 @@ export default function BranchManager() {
   }
 
   async function handleDelete(id) {
-    const ok = await confirmDialog('Bu subeyi silmek istedigine emin misin? Bu islem geri alinamaz.')
+    const ok = await confirmDialog('Bu şubeyi silmek istediğine emin misin? Bu işlem geri alınamaz.')
     if (!ok) return
-  
+
     const { error } = await supabase.from('branches').delete().eq('id', id)
     if (error) toast.error('Silinemedi: ' + error.message)
     else {
-      toast.success('Sube silindi.')
+      toast.success('Şube silindi.')
       fetchBranches()
     }
   }
@@ -61,9 +61,9 @@ export default function BranchManager() {
 
   return (
     <div className="p-4 md:p-8">
-      <PageHeader title="Subeler" subtitle="Okuldaki tum subeleri buradan yonet" />
+      <PageHeader title="Şubeler" subtitle="Okuldaki tüm şubeleri buradan yönet" />
 
-      <PageCard title="Subeler" description="Ders programi sutunlarinda kullanilan sinif subeleri">
+      <PageCard title="Şubeler" description="Ders programı sütunlarında kullanılan sınıf şubeleri">
         <form onSubmit={handleAdd} className="flex gap-3 mb-6">
           <input
             placeholder="9-A"
@@ -72,7 +72,7 @@ export default function BranchManager() {
             className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <input
-            placeholder="Sinif seviyesi (orn: 10)"
+            placeholder="Sınıf seviyesi (örn: 10)"
             value={gradeLevel}
             onChange={(e) => setGradeLevel(e.target.value)}
             className="flex-[2] border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -106,7 +106,7 @@ export default function BranchManager() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-800 text-sm truncate">{b.name}</p>
                   <p className="text-xs text-slate-400">
-                    {b.grade_level ? b.grade_level + '. Sinif Subesi' : 'Seviye girilmedi'}
+                    {b.grade_level ? b.grade_level + '. Sınıf Şubesi' : 'Seviye girilmedi'}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -127,7 +127,7 @@ export default function BranchManager() {
 
         {!fetching && branches.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-slate-400 text-sm">Henuz sube eklenmedi</p>
+            <p className="text-slate-400 text-sm">Henüz şube eklenmedi</p>
           </div>
         )}
       </PageCard>

@@ -28,7 +28,7 @@ export default function AssignmentManager() {
         fetchAll()
     }, [])
 
-    // Haftalik saat degistikce blok secimini sifirla (eski secim yeni saatle uyumsuz olabilir)
+    // Haftalık saat değiştikçe blok seçimini sıfırla (eski seçim yeni saatle uyumsuz olabilir)
     useEffect(() => {
         setBlockPattern('')
     }, [weeklyHours])
@@ -43,7 +43,7 @@ export default function AssignmentManager() {
         ])
 
         const a = results[0]
-        if (a.error) console.error('Atamalar alinamadi:', a.error)
+        if (a.error) console.error('Atamalar alınamadı:', a.error)
         else setAssignments(a.data)
 
         setCourses(results[1].data || [])
@@ -80,8 +80,9 @@ export default function AssignmentManager() {
             fetchAll()
         }
     }
+    
     async function handleDelete(id) {
-        const ok = await confirmDialog('Bu atamayi silmek istedigine emin misin? Bu islem geri alinamaz.')
+        const ok = await confirmDialog('Bu atamayı silmek istediğine emin misin? Bu işlem geri alınamaz.')
         if (!ok) return
 
         const { error } = await supabase.from('course_assignments').delete().eq('id', id)
@@ -96,7 +97,7 @@ export default function AssignmentManager() {
 
     return (
         <div className="p-4 md:p-8">
-            <PageHeader title="Ders Atamalari" subtitle="Hangi ogretmenin hangi dersi hangi subede okutacagini tanimla" />
+            <PageHeader title="Ders Atamaları" subtitle="Hangi öğretmenin hangi dersi hangi şubede okutacağını tanımla" />
 
             <PageCard title="Yeni Atama" className="mb-6">
                 <form onSubmit={handleAdd} className="flex gap-3 items-end flex-wrap">
@@ -104,34 +105,34 @@ export default function AssignmentManager() {
                         label="Ders"
                         value={courseId}
                         onChange={setCourseId}
-                        placeholder="-- Ders Sec --"
+                        placeholder="Ders Seç"
                         className="min-w-[160px]"
                         options={courses.map((c) => ({ value: c.id, label: c.course_name }))}
                     />
 
                     <SelectField
-                        label="Ogretmen"
+                        label="Öğretmen"
                         value={teacherId}
                         onChange={setTeacherId}
-                        placeholder="-- Ogretmen Sec --"
+                        placeholder="Öğretmen Seç"
                         className="min-w-[160px]"
                         options={teachers.map((t) => ({ value: t.id, label: t.full_name }))}
                     />
 
                     <SelectField
-                        label="Sube"
+                        label="Şube"
                         value={branchId}
                         onChange={setBranchId}
-                        placeholder="-- Sube Sec --"
+                        placeholder="Şube Seç"
                         className="min-w-[140px]"
                         options={branches.map((b) => ({ value: b.id, label: b.name }))}
                     />
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-slate-500">Haftalik Saat</label>
+                        <label className="text-xs font-medium text-slate-500">Haftalık Saat</label>
                         <Input
                             type="number"
-                            placeholder="orn: 5"
+                            placeholder="örn: 5"
                             value={weeklyHours}
                             onChange={(e) => setWeeklyHours(e.target.value)}
                             className="w-28"
@@ -139,10 +140,10 @@ export default function AssignmentManager() {
                     </div>
 
                     <SelectField
-                        label="Blok Yapisi"
+                        label="Blok Yapısı"
                         value={blockPattern}
                         onChange={setBlockPattern}
-                        placeholder={weeklyHours ? '-- Sec --' : 'Once saat gir'}
+                        placeholder={weeklyHours ? '-- Seç --' : 'Önce saat giriniz'}
                         className="min-w-[160px]"
                         options={blockOptions}
                     />
@@ -153,7 +154,7 @@ export default function AssignmentManager() {
                 </form>
             </PageCard>
 
-            <PageCard title="Tum Atamalar" description={assignments.length + ' atama kayitli'}>
+            <PageCard title="Tüm Atamalar" description={assignments.length + ' atama kayıtlı'}>
                 <div className="flex flex-col gap-2">
                     {fetching && (
                         <div className="flex flex-col gap-2">
@@ -186,7 +187,7 @@ export default function AssignmentManager() {
 
                     {!fetching && assignments.length === 0 && (
                         <div className="text-center py-12">
-                            <p className="text-slate-400 text-sm">Henuz atama yapilmadi</p>
+                            <p className="text-slate-400 text-sm">Henüz atama yapılmadı</p>
                         </div>
                     )}
                 </div>

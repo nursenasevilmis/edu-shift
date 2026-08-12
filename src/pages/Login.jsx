@@ -21,7 +21,7 @@ export default function Login() {
     setLoading(false)
 
     if (error) {
-      setError('Email veya sifre hatali.')
+      setError('Email veya şifre hatalı.')
     } else {
       navigate('/')
     }
@@ -35,7 +35,7 @@ export default function Login() {
             E
           </div>
           <h1 className="text-xl font-bold text-slate-800">EduSchedule</h1>
-          <p className="text-xs text-slate-400 mt-1">Hesabina giris yap</p>
+          <p className="text-xs text-slate-400 mt-1">Hesabına giriş yap</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -50,7 +50,7 @@ export default function Login() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500">Sifre</label>
+            <label className="text-xs font-medium text-slate-500">Şifre</label>
             <Input
               type="password"
               placeholder="••••••••"
@@ -68,7 +68,7 @@ export default function Login() {
             isLoading={loading}
             className="rounded-xl font-medium mt-2"
           >
-            Giris Yap
+            Giriş Yap
           </Button>
         </form>
       </Card>

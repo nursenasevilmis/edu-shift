@@ -33,7 +33,7 @@ export default function SelectField({ label, value, onChange, options = [], plac
           >
             {options.length === 0 ? (
               <Dropdown.Item id="__empty" textValue="Secenek yok" isDisabled>
-                <Label>Secenek yok</Label>
+                <Label>Seçenek yok</Label>
               </Dropdown.Item>
             ) : (
               options.map((opt) => (

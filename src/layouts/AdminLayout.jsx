@@ -19,13 +19,13 @@ import {
 
 const menuItems = [
   { to: '/dashboard', label: 'Kontrol Paneli', icon: LayoutGrid },
-  { to: '/branches', label: 'Subeler', icon: Layers },
+  { to: '/branches', label: 'Şubeler', icon: Layers },
   { to: '/courses', label: 'Dersler', icon: BookOpen },
-  { to: '/teachers', label: 'Ogretmenler', icon: Users },
-  { to: '/constraints', label: 'Ogretmen Kisitlari', icon: CalendarX },
-  { to: '/assignments', label: 'Ders Atamalari', icon: ClipboardList },
-  { to: '/schedule', label: 'Program Olusturucu', icon: CalendarClock },
-  { to: '/time-settings', label: 'Zaman Ayarlari', icon: SlidersHorizontal },
+  { to: '/teachers', label: 'Öğretmenler', icon: Users },
+  { to: '/constraints', label: 'Öğretmen Kısıtları', icon: CalendarX },
+  { to: '/assignments', label: 'Ders Atamaları', icon: ClipboardList },
+  { to: '/schedule', label: 'Program Oluşturucu', icon: CalendarClock },
+  { to: '/time-settings', label: 'Zaman Ayarları', icon: SlidersHorizontal },
 ]
 
 export default function AdminLayout() {
@@ -74,7 +74,7 @@ export default function AdminLayout() {
 
       {!collapsed && (
         <div className="px-5 pt-5 pb-2">
-          <p className="text-[10px] tracking-wider text-slate-400 font-semibold">CALISMA ALANI</p>
+          <p className="text-[10px] tracking-wider text-slate-400 font-semibold">ÇALIŞMA ALANI</p>
         </div>
       )}
 
@@ -121,7 +121,7 @@ export default function AdminLayout() {
             onClick={signOut}
             className="w-full mt-2 text-xs text-slate-400 hover:text-rose-500 transition-colors duration-150 text-left px-2"
           >
-            Cikis yap
+            Çıkış Yap
           </button>
         )}
         {collapsed && (

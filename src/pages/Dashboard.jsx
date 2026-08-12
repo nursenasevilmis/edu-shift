@@ -46,25 +46,25 @@ export default function Dashboard() {
   const remainingBlocks = Math.max(totalRequiredHours - scheduleCount, 0)
 
   const cards = [
-    { label: 'Ogretmenler', value: stats.teachers, sub: 'Aktif ogretim kadrosu', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', badge: 'BU DONEM' },
-    { label: 'Dersler', value: stats.courses, sub: 'Tanimli ders sayisi', icon: BookOpen, color: 'text-violet-600', bg: 'bg-violet-50', badge: 'BU DONEM' },
-    { label: 'Subeler', value: stats.branches, sub: '2 sinif seviyesinde', icon: Layers, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'BU DONEM' },
-    { label: 'Sistem Durumu', value: 'Saglikli', sub: 'Kurallar calisiyor', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'CANLI', isText: true },
+    { label: 'Öğretmenler', value: stats.teachers, sub: 'Aktif öğretim kadrosu', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', badge: 'BU DÖNEM' },
+    { label: 'Dersler', value: stats.courses, sub: 'Tanımlı ders sayısı', icon: BookOpen, color: 'text-violet-600', bg: 'bg-violet-50', badge: 'BU DÖNEM' },
+    { label: 'Şubeler', value: stats.branches, sub: '2 sınıf seviyesinde', icon: Layers, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'BU DÖNEM' },
+    { label: 'Sistem Durumu', value: 'Sağlıklı', sub: 'Kurallar çalışıyor', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'CANLI', isText: true },
   ]
 
   const attentionItems = [
     remainingBlocks > 0
-      ? { icon: CalendarClock, title: remainingBlocks + ' blok yerlesmedi', sub: 'Program Olusturucuyu kullanarak tamamla', tone: 'default', to: '/schedule' }
-      : { icon: ShieldCheck, title: 'Tum bloklar yerlesti', sub: 'Program tamamlanmis gorunuyor', tone: 'ok' },
-    { icon: UserCheck, title: 'Tum derslerin ogretmeni var', sub: 'Eksik ders sahibi bulunmuyor', tone: 'ok' },
-    { icon: ShieldCheck, title: 'Cozulmemis cakisma yok', sub: 'Ogretmen kisitlari ve caplasmalar temiz', tone: 'ok' },
+      ? { icon: CalendarClock, title: remainingBlocks + ' blok yerleşmedi', sub: 'Program Oluşturucuyu kullanarak tamamla', tone: 'default', to: '/schedule' }
+      : { icon: ShieldCheck, title: 'Tüm bloklar yerleşti', sub: 'Program tamamlanmış görünüyor', tone: 'ok' },
+    { icon: UserCheck, title: 'Tüm derslerin öğretmeni var', sub: 'Eksik ders sahibi bulunmuyor', tone: 'ok' },
+    { icon: ShieldCheck, title: 'Çözülmemiş çakışma yok', sub: 'Öğretmen kısıtları ve çakışmalar temiz', tone: 'ok' },
   ]
 
   return (
     <div className="p-4 md:p-8">
       <PageHeader
         title={'Merhaba, ' + (profile?.full_name || '')}
-        subtitle="Haftalik ders programinin genel durumu"
+        subtitle="Haftalık ders programının genel durumu"
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
@@ -94,8 +94,8 @@ export default function Dashboard() {
 
       <div className="grid md:grid-cols-2 gap-6">
         <PageCard
-          title="Program Ilerlemesi"
-          description="Tabloya yerlestirilen korumali bloklar"
+          title="Program İlerlemesi"
+          description="Tabloya yerleştirilen korumalı bloklar"
           action={
             <span className="text-[10px] font-semibold tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
               BU HAFTA
@@ -116,14 +116,14 @@ export default function Dashboard() {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-2xl font-bold text-slate-800">{placedPercent}%</span>
-                <span className="text-[10px] text-slate-400 tracking-wide">YERLESTI</span>
+                <span className="text-[10px] text-slate-400 tracking-wide">YERLEŞTİ</span>
               </div>
             </div>
 
             <div className="flex-1 flex flex-col gap-4 text-sm">
               <div>
                 <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-slate-500">Yerlesen ders bloklari</span>
+                  <span className="text-slate-500">Yerleşen ders blokları</span>
                   <span className="font-medium text-slate-700">{cappedScheduleCount} / {totalRequiredHours}</span>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -132,7 +132,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-slate-500">Ogretmen musaitligi tanimlandi</span>
+                  <span className="text-slate-500">Öğretmen müsaitliği tanımlandı</span>
                   <span className="font-medium text-slate-700">{stats.teachers} / {stats.teachers}</span>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -141,7 +141,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-slate-500">Dogrulanan atamalar</span>
+                  <span className="text-slate-500">Doğrulanan atamalar</span>
                   <span className="font-medium text-slate-700">{assignments.length} kontrol edildi</span>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -154,7 +154,7 @@ export default function Dashboard() {
 
         <PageCard
           title="Dikkat Gerektiren"
-          description="Yayinlamadan once bunlari cozumle"
+          description="Yayınlamadan önce bunları çözümle"
           action={
             <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
               <AlertTriangle size={15} className="text-amber-500" />

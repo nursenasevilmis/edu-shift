@@ -85,7 +85,7 @@ export default function ConstraintCalendar() {
       const day = parts[0]
       const start = parts[1]
       const slot = timeSlots.find((s) => s.day_of_week === Number(day) && s.start_time.slice(0, 5) === start)
-      return { teacher_id: selectedTeacher, day_of_week: Number(day), start_time: slot.start_time, end_time: slot.end_time, reason: 'Musait degil' }
+      return { teacher_id: selectedTeacher, day_of_week: Number(day), start_time: slot.start_time, end_time: slot.end_time, reason: 'Müsait değil' }
     })
 
     if (rows.length > 0) {
@@ -103,11 +103,11 @@ export default function ConstraintCalendar() {
 
   return (
     <div className="p-4 md:p-8">
-      <PageHeader title="Ogretmen Kisit Takvimi" subtitle="Ogretmenin musait olmadigi saatleri isaretle" />
+      <PageHeader title="Öğretmen Kısıt Takvimi" subtitle="Öğretmenin müsait olmadığı saatleri işaretle" />
 
       <PageCard
-        title="Ogretmen Musaitlik Alani"
-        description="Musait olmayan periyotlari secmek icin hucrelere tikla. Grid, derslerin bu saatlere yerlesmesini engeller."
+        title="Öğretmen Müsaitlik Alanı"
+        description="Müsait olmayan periyotları seçmek için hücrelere tıkla. Grid, derslerin bu saatlere yerleşmesini engeller."
         action={
           <SelectField
             value={selectedTeacher}
@@ -157,7 +157,7 @@ export default function ConstraintCalendar() {
                                   : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50')
                               }
                             >
-                              {isBlocked ? 'Musait Degil' : ''}
+                              {isBlocked ? 'Müsait Değil' : ''}
                             </button>
                           </td>
                         )
