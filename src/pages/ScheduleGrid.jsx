@@ -5,6 +5,8 @@ import { DAYS, computeBlockState } from '../utils/timeUtils'
 import SelectField from '../components/SelectField'
 import { useToast } from '../contexts/ToastContext'
 import { useConfirm } from '../contexts/ConfirmContext'
+import { Wand2 } from 'lucide-react'
+import { generateAutoSchedule } from '../utils/autoSchedule'
 
 export default function ScheduleGrid() {
   const [branches, setBranches] = useState([])
@@ -238,6 +240,100 @@ export default function ScheduleGrid() {
     }
   }
 
+  async function handleAutoGenerate() {
+    const ok = await confirmDialog({
+      title: 'Programi otomatik olustur',
+      message: 'Bu subenin yerlesmemis tum ders bloklari, uygun bos saatlere otomatik dagitilacak. Devam edilsin mi?',
+      confirmLabel: 'Olustur',
+    })
+    if (!ok) return
+
+    // Bu subedeki ogretmenlerin TUM subelerdeki mevcut programini cek (gercek cakisma kontrolu icin)
+    const teacherIds = [...new Set(assignments.map((a) => a.teacher_id))]
+
+    const { data: teacherSchedules, error } = await supabase
+      .from('schedules')
+      .select('time_slot_id, course_assignments!inner(teacher_id)')
+      .in('course_assignments.teacher_id', teacherIds)
+
+    if (error) {
+      toast.error('Ogretmen programlari alinamadi: ' + error.message)
+      return
+    }
+
+    const teacherBusyEntries = teacherSchedules.map((s) => ({
+      teacher_id: s.course_assignments.teacher_id,
+      time_slot_id: s.time_slot_id,
+    }))
+
+    const branchExistingEntries = scheduleEntries.map((e) => ({
+      assignment_id: e.assignment_id,
+      time_slot_id: e.time_slot_id,
+    }))
+
+    const { placements, unplaced } = generateAutoSchedule({
+      assignments,
+      timeSlots,
+      branchExistingEntries,
+      teacherBusyEntries,
+      constraints,
+      days: DAYS,
+    })
+
+    if (placements.length === 0) {
+      toast.warning('Yerlestirilecek bos blok bulunamadi.')
+      return
+    }
+
+    const rows = placements.map((p) => ({
+      branch_id: selectedBranch,
+      assignment_id: p.assignment_id,
+      time_slot_id: p.time_slot_id,
+    }))
+
+    const { error: insertError } = await supabase.from('schedules').insert(rows)
+
+    if (insertError) {
+      toast.error('Otomatik yerlestirme sirasinda hata: ' + insertError.message)
+    } else if (unplaced.length > 0) {
+      toast.warning(placements.length + ' saat yerlesti, ' + unplaced.length + ' blok icin uygun bos saat bulunamadi.')
+    } else {
+      toast.success('Tum bloklar basariyla yerlestirildi.')
+    }
+
+    fetchSchedule(selectedBranch)
+  }
+
+  async function handleClearSchedule() {
+    if (!selectedBranch) return
+
+    if (scheduleEntries.length === 0) {
+      toast.warning('Program zaten boş.')
+      return
+    }
+
+    const ok = await confirmDialog({
+      title: 'Programı tamamen temizle',
+      message:
+        'Bu şubeye ait tüm dersler programdan kaldırılacak. Bu işlem geri alınamaz. Devam etmek istiyor musun?',
+      confirmLabel: 'Tümünü Sil',
+    })
+
+    if (!ok) return
+
+    const { error } = await supabase
+      .from('schedules')
+      .delete()
+      .eq('branch_id', selectedBranch)
+
+    if (error) {
+      toast.error('Program temizlenirken hata oluştu: ' + error.message)
+    } else {
+      setScheduleEntries([])
+      toast.success('Tüm dersler programdan kaldırıldı.')
+    }
+  }
+
   return (
     <div className="p-8">
       <div className="mb-6">
@@ -245,14 +341,40 @@ export default function ScheduleGrid() {
         <p className="text-slate-400 text-sm mt-1">Dersleri sürükleyip haftalık tabloya yerleştir</p>
       </div>
 
-      <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4 flex items-center gap-4">
+      <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4 flex items-center justify-between gap-4 flex-wrap">
+
         <SelectField
-          label="Şube"
+          label="Sube"
           value={selectedBranch}
           onChange={setSelectedBranch}
           className="min-w-[180px]"
-          options={branches.map((b) => ({ value: b.id, label: b.name }))}
+          options={branches.map((b) => ({
+            value: b.id,
+            label: b.name
+          }))}
         />
+
+        <div className="flex items-center gap-3">
+
+          <button
+            onClick={handleAutoGenerate}
+            disabled={!selectedBranch}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150"
+          >
+            <Wand2 size={16} />
+            Otomatik Oluştur
+          </button>
+
+          <button
+            onClick={handleClearSchedule}
+            disabled={!selectedBranch || scheduleEntries.length === 0}
+            className="flex items-center gap-2 bg-red-50 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed text-red-600 text-sm font-medium px-4 py-2.5 rounded-xl border border-red-100 transition-colors duration-150"
+          >
+            Tümünü Temizle
+          </button>
+
+        </div>
+
       </Card>
 
       <div className="flex gap-4">
