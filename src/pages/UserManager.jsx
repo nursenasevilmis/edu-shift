@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Button, Input } from '@heroui/react'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck } from '../components/UiMarks'
 import { supabase } from '../supabaseClient'
 import { supabaseAdmin } from '../supabaseAdminClient'
 import { useAuth } from '../contexts/AuthContext'
@@ -260,7 +260,7 @@ export default function UserManager() {
         </div>
 
         <span className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="w-2 h-2 rounded bg-[#1f5c4b]" />
           Sistem çalışıyor
         </span>
       </div>
@@ -269,7 +269,7 @@ export default function UserManager() {
           YENİ HESAP OLUŞTUR
       ================================================== */}
 
-      <div className="bg-white rounded-2xl shadow-soft border border-slate-50 p-6 mb-6">
+      <div className="bg-[#f4f1e9] rounded shadow-soft border border-slate-50 p-6 mb-6">
 
         <h2 className="font-semibold text-slate-700 mb-1">
           Yeni Hesap Oluştur
@@ -388,7 +388,7 @@ export default function UserManager() {
               color="primary"
               type="submit"
               isLoading={loading}
-              className="rounded-xl font-medium"
+              className="rounded font-medium"
             >
               Kullanıcı Oluştur
             </Button>
@@ -401,7 +401,7 @@ export default function UserManager() {
           ERİŞİM DİZİNİ
       ================================================== */}
 
-      <div className="bg-white rounded-2xl shadow-soft border border-slate-50 overflow-hidden">
+      <div className="bg-[#f4f1e9] rounded shadow-soft border border-slate-50 overflow-hidden">
 
         <div className="p-6 pb-4 flex items-center justify-between">
 
@@ -424,7 +424,7 @@ export default function UserManager() {
 
         {fetching ? (
           <div className="p-6">
-            <div className="h-32 bg-slate-50 rounded-xl animate-pulse" />
+            <div className="h-32 bg-slate-50 rounded animate-pulse" />
           </div>
         ) : (
           <table className="w-full text-sm">

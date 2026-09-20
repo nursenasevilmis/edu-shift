@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X } from '../components/UiMarks'
 import { supabase } from '../supabaseClient'
 import SelectField from '../components/SelectField'
 import PageHeader from '../components/PageHeader'
@@ -113,7 +113,7 @@ export default function TeacherManager() {
     }
   }
 
-  const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-violet-500', 'bg-rose-500', 'bg-cyan-500']
+  const colors = ['bg-[#1f5c4b]', 'bg-[#1f5c4b]', 'bg-[#a05d25]', 'bg-[#1f5c4b]', 'bg-[#a05d25]', 'bg-[#1f5c4b]']
 
   function initialsOf(name) {
     return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
@@ -129,7 +129,7 @@ export default function TeacherManager() {
             placeholder="Ad Soyad"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="flex-1 min-w-[180px] border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 min-w-[180px] border border-slate-200 rounded px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <SelectField
             value={branchId}
@@ -141,7 +141,7 @@ export default function TeacherManager() {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150 shrink-0"
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2.5 rounded transition-colors duration-150 shrink-0"
           >
             <Plus size={16} strokeWidth={2.5} />
             Ekle
@@ -151,7 +151,7 @@ export default function TeacherManager() {
         {fetching ? (
           <div className="grid md:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-slate-50 rounded-xl animate-pulse"></div>
+              <div key={i} className="h-20 bg-slate-50 rounded animate-pulse"></div>
             ))}
           </div>
         ) : teachers.length === 0 ? (
@@ -161,13 +161,13 @@ export default function TeacherManager() {
         ) : (
           <div className="grid md:grid-cols-3 gap-3">
             {teachers.map((t, i) => (
-              <div key={t.id} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors duration-150">
+              <div key={t.id} className="flex items-center gap-3 p-4 rounded bg-slate-50 hover:bg-slate-100 transition-colors duration-150">
                 {editingId === t.id ? (
                   <div className="flex-1 flex flex-col gap-1.5 min-w-0">
                     <input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="border border-slate-200 rounded-lg px-2 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="border border-slate-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                       autoFocus
                     />
                     <SelectField
@@ -179,13 +179,13 @@ export default function TeacherManager() {
                     <div className="flex items-center gap-1 justify-end">
                       <button
                         onClick={() => saveEdit(t.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-emerald-500 hover:bg-emerald-100"
+                        className="w-7 h-7 rounded flex items-center justify-center text-emerald-500 hover:bg-emerald-100"
                       >
                         <Check size={15} />
                       </button>
                       <button
                         onClick={cancelEdit}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-200"
+                        className="w-7 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-slate-200"
                       >
                         <X size={15} />
                       </button>
@@ -193,7 +193,7 @@ export default function TeacherManager() {
                   </div>
                 ) : (
                   <>
-                    <div className={'w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 ' + colors[i % colors.length]}>
+                    <div className={'w-11 h-11 rounded flex items-center justify-center text-white font-bold text-sm shrink-0 ' + colors[i % colors.length]}>
                       {initialsOf(t.full_name)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -205,13 +205,13 @@ export default function TeacherManager() {
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => startEdit(t)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-200 transition-colors duration-150"
+                        className="w-7 h-7 rounded flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-200 transition-colors duration-150"
                       >
                         <Pencil size={13} />
                       </button>
                       <button
                         onClick={() => handleDelete(t.id, t.full_name)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
+                        className="w-7 h-7 rounded flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
                       >
                         <Trash2 size={13} />
                       </button>

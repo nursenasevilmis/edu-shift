@@ -1,14 +1,14 @@
 import { createContext, useContext, useState, useCallback } from 'react'
-import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react'
+import { CheckCircle2, XCircle, AlertTriangle, Info, X } from '../components/UiMarks'
 
 const ToastContext = createContext()
 
 const ICONS = { success: CheckCircle2, error: XCircle, warning: AlertTriangle, info: Info }
 const STYLES = {
-    success: 'bg-white border-emerald-100 text-emerald-600',
-    error: 'bg-white border-rose-100 text-rose-600',
-    warning: 'bg-white border-amber-100 text-amber-600',
-    info: 'bg-white border-blue-100 text-blue-600',
+    success: 'bg-[#f4f1e9] border-emerald-100 text-emerald-600',
+    error: 'bg-[#f4f1e9] border-rose-100 text-rose-600',
+    warning: 'bg-[#f4f1e9] border-amber-100 text-amber-600',
+    info: 'bg-[#f4f1e9] border-blue-100 text-blue-600',
 }
 
 export function ToastProvider({ children }) {
@@ -43,7 +43,7 @@ export function ToastProvider({ children }) {
                         <div
                             key={t.id}
                             className={
-                                'flex items-start gap-3 p-4 rounded-xl border shadow-lg animate-toast-in ' +
+                                'flex items-start gap-3 p-4 rounded border shadow-lg animate-toast-in ' +
                                 (STYLES[t.type] || STYLES.info)
                             }
                         >

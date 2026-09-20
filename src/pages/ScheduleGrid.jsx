@@ -5,7 +5,7 @@ import { DAYS, computeBlockState } from '../utils/timeUtils'
 import SelectField from '../components/SelectField'
 import { useToast } from '../contexts/ToastContext'
 import { useConfirm } from '../contexts/ConfirmContext'
-import { Wand2, CalendarDays, Trash2, Info } from 'lucide-react'
+import { Wand2, CalendarDays, Trash2, Info } from '../components/UiMarks'
 import { generateAutoSchedule } from '../utils/autoSchedule'
 
 export default function ScheduleGrid() {
@@ -364,7 +364,7 @@ export default function ScheduleGrid() {
           <h1 className="text-[28px] md:text-[34px] font-bold text-slate-900 leading-tight">Program Oluşturucu</h1>
           <p className="text-slate-500 text-sm mt-2">Dersleri sürükleyip bırak veya tüm boşlukları kurallara göre otomatik doldur.</p>
         </div>
-        <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-2"><CalendarDays size={14} className="text-teal-600" /> Haftalık görünüm</div>
+        <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-[#f4f1e9] border border-slate-200 rounded px-3 py-2"><CalendarDays size={14} className="text-teal-600" /> Haftalık görünüm</div>
       </div>
 
       <Card className="p-4 md:p-5 border border-slate-200/70 shadow-soft rounded-[22px] mb-4 flex items-center justify-between gap-4 flex-wrap">
@@ -385,14 +385,14 @@ export default function ScheduleGrid() {
           <button
             onClick={handleAutoGenerate}
             disabled={!selectedBranch}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2.5 rounded transition-colors duration-150"
           >
             <Wand2 size={16} />
             Otomatik oluştur
           </button>
             <button
               onClick={handleClearBranch}
-              className="flex items-center gap-2 bg-white border border-slate-200 hover:border-rose-200 hover:text-rose-500 text-slate-500 text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150"
+              className="flex items-center gap-2 bg-[#f4f1e9] border border-slate-200 hover:border-rose-200 hover:text-rose-500 text-slate-500 text-sm font-medium px-4 py-2.5 rounded transition-colors duration-150"
             >
               <Trash2 size={15} />
               Şubeyi temizle
@@ -422,7 +422,7 @@ export default function ScheduleGrid() {
                     draggable={remaining > 0}
                     onDragStart={(e) => handleDragStart(e, a, 1)}
                     className={
-                      'p-3 rounded-xl border transition-all duration-150 ' +
+                      'p-3 rounded border transition-all duration-150 ' +
                       (remaining > 0
                         ? 'cursor-grab active:cursor-grabbing bg-blue-50 border-blue-100 hover:shadow-soft hover:-translate-y-0.5'
                         : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed')
@@ -439,7 +439,7 @@ export default function ScheduleGrid() {
 
               // Blok yapısı var: her blok parçası (2, 3 gibi) ayrı ayrı sürüklenebilir kart olarak gösterilir
               return (
-                <div key={a.id} className="p-3 rounded-xl border bg-indigo-50 border-indigo-100">
+                <div key={a.id} className="p-3 rounded border bg-indigo-50 border-indigo-100">
                   <p className="font-medium text-sm text-slate-700">{a.courses?.course_name}</p>
                   <p className="text-xs text-slate-500 mb-2">{a.teachers?.full_name}</p>
                   <p className="text-[11px] text-slate-400 mb-2">
@@ -452,7 +452,7 @@ export default function ScheduleGrid() {
                         draggable
                         onDragStart={(e) => handleDragStart(e, a, size)}
                         title={size + ' saatlik ardışık blok - sürükle'}
-                        className="cursor-grab active:cursor-grabbing px-2.5 py-1.5 rounded-lg bg-white border border-indigo-200 text-xs font-medium text-indigo-700 hover:shadow-soft hover:-translate-y-0.5 transition-all duration-150"
+                        className="cursor-grab active:cursor-grabbing px-2.5 py-1.5 rounded bg-[#f4f1e9] border border-indigo-200 text-xs font-medium text-indigo-700 hover:shadow-soft hover:-translate-y-0.5 transition-all duration-150"
                       >
                         {size} saat
                       </div>
@@ -461,7 +461,7 @@ export default function ScheduleGrid() {
                       <div
                         key={'p' + idx}
                         title="Yerleştirildi"
-                        className="px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700"
+                        className="px-2.5 py-1.5 rounded bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700"
                       >
                         ✓ {run.length} saat
                       </div>
@@ -478,7 +478,7 @@ export default function ScheduleGrid() {
 
         <Card className="p-5 border border-slate-200/70 shadow-soft rounded-[22px] flex-1 overflow-x-auto">
           {fetching ? (
-            <div className="h-96 bg-slate-50 rounded-xl animate-pulse"></div>
+            <div className="h-96 bg-slate-50 rounded animate-pulse"></div>
           ) : (
             <table className="w-full border-collapse text-sm">
               <thead>
@@ -496,7 +496,7 @@ export default function ScheduleGrid() {
                     {DAYS.map((d) => {
                       const slot = getSlotFor(d.value, periodNumber)
                       if (!slot) {
-                        return <td key={d.value} className="p-2 border border-slate-50 bg-slate-50 rounded-lg"></td>
+                        return <td key={d.value} className="p-2 border border-slate-50 bg-slate-50 rounded"></td>
                       }
                       const entry = findScheduleEntry(slot.id)
                       const cellKey = d.value + '-' + periodNumber
@@ -510,7 +510,7 @@ export default function ScheduleGrid() {
                           onDrop={(e) => handleDrop(e, slot)}
                           onClick={() => entry && handleRemove(entry)}
                           className={
-                            'p-2 text-center h-16 align-middle rounded-lg border transition-all duration-150 ' +
+                            'p-2 text-center h-16 align-middle rounded border transition-all duration-150 ' +
                             (entry
                               ? 'bg-blue-50 border-blue-100 hover:bg-blue-100 cursor-pointer'
                               : isDragOver

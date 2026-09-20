@@ -1,5 +1,5 @@
 import { Dropdown, Label, Button } from '@heroui/react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown } from './UiMarks'
 
 export default function SelectField({ label, value, onChange, options = [], placeholder, className = '' }) {
   const selectedKeys = value !== undefined && value !== null && value !== '' ? new Set([String(value)]) : new Set()
@@ -17,7 +17,7 @@ export default function SelectField({ label, value, onChange, options = [], plac
       <Dropdown>
         <Button
           variant="secondary"
-          className="w-full flex items-center justify-between gap-2 border border-slate-200 rounded-xl px-3 h-10 text-sm bg-white hover:border-slate-300"
+          className="w-full flex items-center justify-between gap-2 border border-slate-200 rounded px-3 h-10 text-sm bg-[#f4f1e9] hover:border-slate-300"
         >
           <span className={selected ? 'text-slate-700' : 'text-slate-400'}>
             {selected ? selected.label : (placeholder || 'Sec')}
@@ -25,7 +25,7 @@ export default function SelectField({ label, value, onChange, options = [], plac
           <ChevronDown size={16} strokeWidth={2} className="text-slate-400 shrink-0" />
         </Button>
 
-        <Dropdown.Popover className="min-w-[200px] rounded-xl border border-slate-100 shadow-lg p-1">
+        <Dropdown.Popover className="min-w-[200px] rounded border border-slate-100 shadow-lg p-1">
           <Dropdown.Menu
             selectionMode="single"
             selectedKeys={selectedKeys}

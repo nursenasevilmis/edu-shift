@@ -263,10 +263,10 @@ export default function AssignmentManager() {
                                         key={b.id}
                                         onClick={() => toggleBranch(b.id)}
                                         className={
-                                            'flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-colors duration-150 ' +
+                                            'flex items-center gap-2 px-3 py-2 rounded border text-sm transition-colors duration-150 ' +
                                             (checked
                                                 ? 'bg-blue-50 border-blue-200 text-blue-700'
-                                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300')
+                                                : 'bg-[#f4f1e9] border-slate-200 text-slate-600 hover:border-slate-300')
                                         }
                                     >
                                         <span
@@ -288,7 +288,7 @@ export default function AssignmentManager() {
                     </div>
 
                     <div className="flex justify-end">
-                        <Button color="primary" type="submit" isLoading={loading} className="rounded-xl font-medium">
+                        <Button color="primary" type="submit" isLoading={loading} className="rounded font-medium">
                             {selectedBranchIds.size > 1
                                 ? selectedBranchIds.size + ' Sube Icin Ata'
                                 : 'Ata'}
@@ -302,13 +302,13 @@ export default function AssignmentManager() {
                     {fetching && (
                         <div className="flex flex-col gap-2">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="h-16 bg-slate-50 rounded-xl animate-pulse"></div>
+                                <div key={i} className="h-16 bg-slate-50 rounded animate-pulse"></div>
                             ))}
                         </div>
                     )}
 
                     {!fetching && assignments.map((a) => (
-                        <div key={a.id} className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors duration-150">
+                        <div key={a.id} className="flex items-center justify-between p-3.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors duration-150">
                             <div>
                                 <p className="font-medium text-slate-700 text-sm">
                                     {a.courses?.course_name}
@@ -316,12 +316,12 @@ export default function AssignmentManager() {
                                     <span className="text-slate-500 font-normal">{a.teachers?.full_name}</span>
                                 </p>
                                 <p className="text-xs text-slate-400">
-                                    {a.branches?.name} — {a.weekly_hours} saat{a.block_pattern ? ', ' + a.block_pattern : ''}
+                                    {a.branches?.name} · {a.weekly_hours} saat{a.block_pattern ? ', ' + a.block_pattern : ''}
                                 </p>
                             </div>
                             <button
                                 onClick={() => handleDelete(a.id)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
+                                className="w-8 h-8 rounded flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
                             >
                                 ✕
                             </button>

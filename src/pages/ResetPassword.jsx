@@ -37,7 +37,7 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm p-8 border-0 shadow-soft rounded-2xl">
+      <Card className="w-full max-w-sm p-8 border-0 shadow-soft rounded">
         <div className="mb-6 text-center">
           <h1 className="text-xl font-bold text-slate-800">Yeni Şifre Belirle</h1>
           <p className="text-xs text-slate-400 mt-1">Hesabın için yeni bir şifre gir</p>
@@ -64,7 +64,7 @@ export default function ResetPassword() {
               required
             />
           </div>
-          <Button color="primary" type="submit" isLoading={loading} className="rounded-xl font-medium mt-2">
+          <Button color="primary" type="submit" isLoading={loading} className="rounded font-medium mt-2">
             Şifreyi Güncelle
           </Button>
         </form>

@@ -46,3 +46,15 @@ Program oluşturucudaki sürükle-bırak yaklaşımı, müdür veya koordinatör
 3. Öğretmen görünümü ve okul genelinde çakışma özeti.
 4. Lint borcunun temizlenmesi; veri çağrılarının `useCallback` veya uygun hook kalıbına taşınması.
 5. E2E testleri: admin giriş, ders atama, öğretmen kısıtı, çakışma reddi, otomatik oluşturma ve PDF akışları.
+
+## İkinci tasarım turu: sanat yönetimi kararı
+
+Bu turda görsel dil bilinçli olarak **İsviçre takvimleri ve kontrol odası tipografisi** çizgisine taşındı. Ürünün tek işi, okul müdürünün haftalık programı çakışmasız hazırlayıp güvenle yayınlaması olarak sabitlendi. Bunun sonucunda arayüzün ayırt edici yapısı, tek bir yayınlama dosyası akışı oldu: her ekranda durum, kanıt ve sıradaki karar görünür tutuluyor.
+
+Tipografi **IBM Plex Sans** ve **IBM Plex Mono** ile sınırlandı. Ana renk koyu yosun yeşili; nötr aile kâğıt, taş ve kömür tonlarından oluşuyor. Gradient, neon, mor-mavi palet, cam efekti, bulanık ışık, grain, süs terminali, emoji, aşırı yuvarlak kartlar, üçlü ikon kutuları ve scroll ile beliren bölümler kaldırıldı. Lucide ikonları yerine küçük, geometrik metin işaretleri kullanıldı; ikonlar ana mesajın önüne geçmiyor.
+
+Giriş ekranı artık somut bir tarih ve gerçek iş akışı söylüyor: **20 Eylül 2026**, şube, ders, öğretmen ve zaman kısıtlarının tek program dosyasında toplanması. Dashboard, dekoratif hero yerine “Program yayınlanmaya hazır” veya “Yayın öncesi kontroller sürüyor” kararını öne çıkarıyor. Her kontrolün yanında kanıt, durum ve sonraki sayfaya geçiş bulunuyor. Şartlar ve gizlilik bağlantıları giriş ve dashboard altına eklendi.
+
+## Siyah blok testi
+
+Sayfa yalnızca siyah bloklara indirildiğinde ayrışmayı sağlayan yapı; renk efektleri değil, **solda kalıcı okul operasyon navigasyonu, üstte yıl ve çalışma bağlamı, içerikte numaralı yayınlama kontrolleri ve mono veri etiketleri** oluyor. Marka adı çıkarıldığında bile “şube, ders, öğretmen ve zaman kısıtlarından haftalık program dosyası hazırlama” metni ürünün ne yaptığını anlatmaya devam ediyor.

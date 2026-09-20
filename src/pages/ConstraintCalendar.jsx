@@ -118,7 +118,7 @@ export default function ConstraintCalendar() {
         }
       >
         {fetching ? (
-          <div className="h-64 bg-slate-50 rounded-xl animate-pulse"></div>
+          <div className="h-64 bg-slate-50 rounded animate-pulse"></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
@@ -136,7 +136,7 @@ export default function ConstraintCalendar() {
                   return (
                     <tr key={periodNumber}>
                       <td className="py-1.5 pr-2">
-                        <div className="w-11 h-11 rounded-full bg-slate-50 flex flex-col items-center justify-center text-slate-500">
+                        <div className="w-11 h-11 rounded bg-slate-50 flex flex-col items-center justify-center text-slate-500">
                           <span className="text-xs font-semibold leading-none">{periodNumber}</span>
                           <span className="text-[9px] leading-none mt-0.5">{firstSlotOfRow ? firstSlotOfRow.start_time.slice(0, 5) : ''}</span>
                         </div>
@@ -151,10 +151,10 @@ export default function ConstraintCalendar() {
                             <button
                               onClick={() => toggleCell(slot)}
                               className={
-                                'w-full h-11 rounded-xl border text-xs font-medium transition-colors duration-150 ' +
+                                'w-full h-11 rounded border text-xs font-medium transition-colors duration-150 ' +
                                 (isBlocked
                                   ? 'bg-amber-50 border-amber-100 text-amber-600 hover:bg-amber-100'
-                                  : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50')
+                                  : 'bg-[#f4f1e9] border-slate-100 hover:border-slate-200 hover:bg-slate-50')
                               }
                             >
                               {isBlocked ? 'Müsait Değil' : ''}
@@ -174,7 +174,7 @@ export default function ConstraintCalendar() {
           <button
             onClick={handleSave}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors duration-150"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded transition-colors duration-150"
           >
             {loading ? 'Kaydediliyor...' : 'Kaydet'}
           </button>
