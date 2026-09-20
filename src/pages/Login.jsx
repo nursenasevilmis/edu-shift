@@ -1,145 +1,20 @@
 import { useState } from 'react'
-import { Button, Input, Card } from '@heroui/react'
+import { ArrowRight, BookMarked, CheckCircle2, LockKeyhole } from 'lucide-react'
+import { Input } from '@heroui/react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useToast } from '../contexts/ToastContext'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [mode, setMode] = useState('login') // 'login' | 'forgot'
-  const [resetLoading, setResetLoading] = useState(false)
-  const { signIn } = useAuth()
-  const navigate = useNavigate()
-  const toast = useToast()
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    const { error } = await signIn(email, password)
-
-    setLoading(false)
-
-    if (error) {
-      setError('Email veya şifre hatalı.')
-    } else {
-      navigate('/')
-    }
-  }
-
-  async function handleForgotPassword(e) {
-    e.preventDefault()
-    if (!email.trim()) {
-      toast.warning('Önce email adresini gir.')
-      return
-    }
-
-    setResetLoading(true)
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/reset-password',
-    })
-    setResetLoading(false)
-
-    if (error) {
-      toast.error('Bir hata oluştu: ' + error.message)
-    } else {
-      toast.success('Şifre sıfırlama linki email adresine gönderildi.')
-      setMode('login')
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm p-8 border-0 shadow-soft rounded-2xl">
-        <div className="mb-6 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xl font-bold mx-auto mb-3">
-            E
-          </div>
-          <h1 className="text-xl font-bold text-slate-800">EduSchedule</h1>
-          <p className="text-xs text-slate-400 mt-1">
-            {mode === 'login' ? 'Hesabına giriş yap' : 'Şifreni sıfırla'}
-          </p>
-        </div>
-
-        {mode === 'login' ? (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Email</label>
-              <Input
-                type="email"
-                placeholder="ornek@mail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Şifre</label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            {error && (
-              <p className="text-rose-500 text-xs bg-rose-50 rounded-lg px-3 py-2">{error}</p>
-            )}
-            <Button
-              color="primary"
-              type="submit"
-              isLoading={loading}
-              className="rounded-xl font-medium mt-2"
-            >
-              Giriş Yap
-            </Button>
-            <button
-              type="button"
-              onClick={() => setMode('forgot')}
-              className="text-xs text-slate-400 hover:text-blue-600 transition-colors duration-150 text-center"
-            >
-              Şifremi unuttum
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleForgotPassword} className="flex flex-col gap-4">
-            <p className="text-xs text-slate-500 -mt-2">
-              Email adresini gir, sana şifre sıfırlama linki gönderelim.
-            </p>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Email</label>
-              <Input
-                type="email"
-                placeholder="ornek@mail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <Button
-              color="primary"
-              type="submit"
-              isLoading={resetLoading}
-              className="rounded-xl font-medium mt-2"
-            >
-              Sıfırlama Linki Gönder
-            </Button>
-            <button
-              type="button"
-              onClick={() => setMode('login')}
-              className="text-xs text-slate-400 hover:text-blue-600 transition-colors duration-150 text-center"
-            >
-              Girişe geri dön
-            </button>
-          </form>
-        )}
-      </Card>
-    </div>
-  )
+  const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const [mode, setMode] = useState('login'); const [resetLoading, setResetLoading] = useState(false)
+  const { signIn } = useAuth(); const navigate = useNavigate(); const toast = useToast()
+  async function handleSubmit(e) { e.preventDefault(); setError(''); setLoading(true); const { error: signInError } = await signIn(email, password); setLoading(false); if (signInError) setError('Email veya şifre hatalı.'); else navigate('/') }
+  async function handleForgotPassword(e) { e.preventDefault(); if (!email.trim()) { toast.warning('Önce email adresini gir.'); return }; setResetLoading(true); const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/reset-password' }); setResetLoading(false); if (resetError) toast.error('Bir hata oluştu: ' + resetError.message); else { toast.success('Şifre sıfırlama linki email adresine gönderildi.'); setMode('login') } }
+  return <div className="min-h-screen bg-[#f6f8fb] flex">
+    <div className="hidden lg:flex lg:w-[46%] bg-[#111c35] relative overflow-hidden p-12 xl:p-16 flex-col justify-between"><div className="absolute -top-32 -right-32 w-[520px] h-[520px] rounded-full border border-teal-300/10" /><div className="absolute top-24 -right-12 w-80 h-80 rounded-full bg-teal-400/10 blur-3xl" /><div className="relative flex items-center gap-3"><div className="w-11 h-11 rounded-[15px] bg-gradient-to-br from-teal-300 to-cyan-700 text-white flex items-center justify-center shadow-xl shadow-teal-950/30"><BookMarked size={22} /></div><div><p className="font-bold text-white text-lg">EduShift</p><p className="text-[10px] tracking-[.18em] text-slate-400 font-bold">SCHOOL OPS</p></div></div><div className="relative max-w-md"><p className="text-teal-300 text-xs uppercase tracking-[.18em] font-bold mb-5">Daha sakin bir okul haftası</p><h1 className="text-4xl xl:text-5xl text-white font-bold leading-[1.08]">Programı değil,<br /><span className="text-teal-300">okulu yönetin.</span></h1><p className="text-slate-400 leading-relaxed mt-6">EduShift, ders programını oluşturma karmaşasını görünür bir operasyona dönüştürür.</p><div className="mt-9 space-y-3 text-sm text-slate-300"><p className="flex items-center gap-3"><CheckCircle2 size={17} className="text-teal-300" /> Çakışma kontrollü planlama</p><p className="flex items-center gap-3"><CheckCircle2 size={17} className="text-teal-300" /> Öğretmen kısıtlarını tek yerde görme</p><p className="flex items-center gap-3"><CheckCircle2 size={17} className="text-teal-300" /> Yayına hazır program güveni</p></div></div><p className="relative text-xs text-slate-500">Haftalık ders programı yönetimi, daha iyi tasarlandı.</p></div>
+    <div className="flex-1 flex items-center justify-center p-5 sm:p-8"><div className="w-full max-w-[420px]"><div className="lg:hidden flex items-center gap-3 mb-12"><div className="w-10 h-10 rounded-xl bg-[#111c35] text-teal-300 flex items-center justify-center"><BookMarked size={19} /></div><span className="font-bold text-slate-900 text-lg">EduShift</span></div><div className="mb-8"><div className="w-11 h-11 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center mb-5"><LockKeyhole size={20} /></div><h2 className="text-3xl font-bold text-slate-900">Tekrar hoş geldin.</h2><p className="text-slate-500 text-sm mt-2">Okul operasyon merkezine giriş yap.</p></div>
+      {mode === 'login' ? <form onSubmit={handleSubmit} className="space-y-5"><div className="space-y-2"><label className="text-xs font-bold text-slate-600">Email adresi</label><Input type="email" placeholder="ornek@okul.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="!rounded-xl" /></div><div className="space-y-2"><div className="flex justify-between items-center"><label className="text-xs font-bold text-slate-600">Şifre</label><button type="button" onClick={() => setMode('forgot')} className="text-xs font-semibold text-teal-700 hover:text-teal-900">Şifremi unuttum</button></div><Input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="!rounded-xl" /></div>{error && <p className="text-rose-600 text-xs bg-rose-50 border border-rose-100 rounded-xl px-3 py-2.5">{error}</p>}<button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 bg-[#111c35] hover:bg-slate-800 disabled:opacity-60 text-white font-bold rounded-xl py-3 transition-colors">{loading ? 'Giriş yapılıyor...' : 'Giriş yap'}{!loading && <ArrowRight size={17} />}</button></form> : <form onSubmit={handleForgotPassword} className="space-y-5"><p className="text-sm text-slate-500 leading-relaxed">Email adresini gir, şifre sıfırlama bağlantısını gönderelim.</p><div className="space-y-2"><label className="text-xs font-bold text-slate-600">Email adresi</label><Input type="email" placeholder="ornek@okul.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="!rounded-xl" /></div><button type="submit" disabled={resetLoading} className="w-full bg-[#111c35] text-white font-bold rounded-xl py-3 disabled:opacity-60">{resetLoading ? 'Gönderiliyor...' : 'Sıfırlama bağlantısı gönder'}</button><button type="button" onClick={() => setMode('login')} className="w-full text-xs text-slate-500 hover:text-teal-700">Girişe geri dön</button></form>}
+      <p className="text-center text-xs text-slate-400 mt-10">EduShift · Yetkili okul personeli erişimi</p></div></div>
+  </div>
 }

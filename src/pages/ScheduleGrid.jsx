@@ -5,7 +5,7 @@ import { DAYS, computeBlockState } from '../utils/timeUtils'
 import SelectField from '../components/SelectField'
 import { useToast } from '../contexts/ToastContext'
 import { useConfirm } from '../contexts/ConfirmContext'
-import { Wand2 } from 'lucide-react'
+import { Wand2, CalendarDays, Trash2, Info } from 'lucide-react'
 import { generateAutoSchedule } from '../utils/autoSchedule'
 
 export default function ScheduleGrid() {
@@ -357,16 +357,20 @@ export default function ScheduleGrid() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Program Oluşturucu</h1>
-        <p className="text-slate-400 text-sm mt-1">Dersleri sürükleyip haftalık tabloya yerleştir</p>
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
+      <div className="flex items-end justify-between gap-4 flex-wrap mb-7">
+        <div>
+          <p className="text-[11px] uppercase tracking-[.16em] text-teal-700 font-bold mb-2">Program operasyonu</p>
+          <h1 className="text-[28px] md:text-[34px] font-bold text-slate-900 leading-tight">Program Oluşturucu</h1>
+          <p className="text-slate-500 text-sm mt-2">Dersleri sürükleyip bırak veya tüm boşlukları kurallara göre otomatik doldur.</p>
+        </div>
+        <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-2"><CalendarDays size={14} className="text-teal-600" /> Haftalık görünüm</div>
       </div>
 
-      <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4 flex items-center justify-between gap-4 flex-wrap">
+      <Card className="p-4 md:p-5 border border-slate-200/70 shadow-soft rounded-[22px] mb-4 flex items-center justify-between gap-4 flex-wrap">
 
         <SelectField
-          label="Sube"
+          label="Şube"
           value={selectedBranch}
           onChange={setSelectedBranch}
           className="min-w-[180px]"
@@ -384,13 +388,14 @@ export default function ScheduleGrid() {
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150"
           >
             <Wand2 size={16} />
-            Otomatik Oluştur
+            Otomatik oluştur
           </button>
-          <button
-            onClick={handleClearBranch}
-            className="flex items-center gap-2 bg-white border border-slate-200 hover:border-rose-200 hover:text-rose-500 text-slate-500 text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150"
-          >
-            Tümünü Temizle
+            <button
+              onClick={handleClearBranch}
+              className="flex items-center gap-2 bg-white border border-slate-200 hover:border-rose-200 hover:text-rose-500 text-slate-500 text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150"
+            >
+              <Trash2 size={15} />
+              Şubeyi temizle
           </button>
 
         
@@ -400,9 +405,9 @@ export default function ScheduleGrid() {
       </Card>
 
       <div className="flex gap-4">
-        <Card className="p-5 border-0 shadow-soft rounded-2xl w-64 shrink-0 h-fit">
-          <h2 className="font-semibold text-sm text-slate-700 mb-1">Dersler ve Öğretmenler</h2>
-          <p className="text-xs text-slate-400 mb-4">Kartı sürükleyip tabloya bırak</p>
+        <Card className="p-5 border border-slate-200/70 shadow-soft rounded-[22px] w-64 shrink-0 h-fit">
+          <div className="flex items-center gap-2 mb-1"><h2 className="font-bold text-sm text-slate-800">Dersler ve öğretmenler</h2><Info size={14} className="text-slate-300" /></div>
+          <p className="text-xs text-slate-400 mb-4 leading-relaxed">Kartı sürükleyip tabloya bırak. Dolu hücreler otomatik korunur.</p>
           <div className="flex flex-col gap-2">
             {assignments.map((a) => {
               const placedCount = entriesForAssignment(a.id).length
@@ -471,7 +476,7 @@ export default function ScheduleGrid() {
           </div>
         </Card>
 
-        <Card className="p-5 border-0 shadow-soft rounded-2xl flex-1 overflow-x-auto">
+        <Card className="p-5 border border-slate-200/70 shadow-soft rounded-[22px] flex-1 overflow-x-auto">
           {fetching ? (
             <div className="h-96 bg-slate-50 rounded-xl animate-pulse"></div>
           ) : (

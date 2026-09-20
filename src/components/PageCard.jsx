@@ -1,16 +1,7 @@
-import { Card } from '@heroui/react'
-
 export default function PageCard({ title, description, action, children, className = '' }) {
-    return (
-        <Card className={'border-0 shadow-soft rounded-2xl bg-white p-6 ' + className}>
-            {(title || action) && (
-                <div className="flex items-center justify-between mb-1">
-                    {title && <Card.Title className="font-semibold text-slate-700 text-base">{title}</Card.Title>}
-                    {action}
-                </div>
-            )}
-            {description && <Card.Description className="text-xs text-slate-400 mb-4">{description}</Card.Description>}
-            <Card.Content className="p-0">{children}</Card.Content>
-        </Card>
-    )
+  return <section className={'bg-white border border-slate-200/70 shadow-soft rounded-[22px] p-5 md:p-6 ' + className}>
+    {(title || action) && <div className="flex items-start justify-between gap-4 mb-1"><div>{title && <h2 className="font-bold text-slate-800 text-base md:text-[17px]">{title}</h2>}{description && <p className="text-xs text-slate-400 mt-1 leading-relaxed">{description}</p>}</div>{action}</div>}
+    {!title && description && <p className="text-xs text-slate-400 mb-4">{description}</p>}
+    <div className={title || description ? 'mt-4' : ''}>{children}</div>
+  </section>
 }
