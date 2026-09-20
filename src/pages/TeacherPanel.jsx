@@ -1,13 +1,13 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { Card, Button } from '@heroui/react'
-import { Download } from 'lucide-react'
+import { Download } from '../components/UiMarks'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabaseClient'
 import { DAYS } from '../utils/timeUtils'
 import { useToast } from '../contexts/ToastContext'
 
 export default function TeacherPanel() {
-  const { profile, signOut, user } = useAuth()
+  const { signOut, user } = useAuth()
   const [teacherRecord, setTeacherRecord] = useState(null)
   const [scheduleEntries, setScheduleEntries] = useState([])
   const [timeSlots, setTimeSlots] = useState([])
@@ -16,11 +16,8 @@ export default function TeacherPanel() {
   const tableRef = useRef(null)
   const toast = useToast()
 
-  useEffect(() => {
-    if (user) fetchTeacherAndSchedule()
-  }, [user])
-
-  async function fetchTeacherAndSchedule() {
+  const fetchTeacherAndSchedule = useCallback(async () => {
+    if (!user) return
     setLoading(true)
 
     const { data: teacher, error: teacherError } = await supabase
@@ -53,7 +50,11 @@ export default function TeacherPanel() {
     else setScheduleEntries(entries)
 
     setLoading(false)
-  }
+  }, [user])
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchTeacherAndSchedule)
+  }, [fetchTeacherAndSchedule])
 
   const maxPeriods = Math.max(
     1,
@@ -111,8 +112,8 @@ export default function TeacherPanel() {
     return (
       <div className="min-h-screen bg-slate-50 p-8">
         <div className="max-w-5xl mx-auto">
-          <div className="h-8 w-48 bg-slate-100 rounded-lg animate-pulse mb-6"></div>
-          <div className="h-96 bg-slate-100 rounded-2xl animate-pulse"></div>
+          <div className="h-8 w-48 bg-slate-100 rounded animate-pulse mb-6"></div>
+          <div className="h-96 bg-slate-100 rounded animate-pulse"></div>
         </div>
       </div>
     )
@@ -121,11 +122,11 @@ export default function TeacherPanel() {
   if (!teacherRecord) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4 p-8">
-        <Card className="p-8 border-0 shadow-soft rounded-2xl max-w-md text-center">
+        <Card className="p-8 border-0 shadow-soft rounded max-w-md text-center">
           <p className="text-slate-600 mb-4">
             Hesabina bagli bir ogretmen kaydi bulunamadi. Yoneticinle iletisime gec.
           </p>
-          <Button color="danger" variant="light" onClick={signOut} className="rounded-xl">
+          <Button color="danger" variant="light" onClick={signOut} className="rounded">
             Cikis Yap
           </Button>
         </Card>
@@ -146,7 +147,7 @@ export default function TeacherPanel() {
             size="sm"
             onClick={handleDownloadPdf}
             isLoading={exporting}
-            className="rounded-xl"
+            className="rounded"
           >
             <Download size={15} className="mr-1" />
             PDF İndir
@@ -156,7 +157,7 @@ export default function TeacherPanel() {
             variant="light"
             size="sm"
             onClick={signOut}
-            className="rounded-xl"
+            className="rounded"
           >
             Çıkış Yap
           </Button>
@@ -164,11 +165,11 @@ export default function TeacherPanel() {
       </div>
 
       <div className="p-8 max-w-6xl mx-auto">
-        <Card className="p-5 border-0 shadow-soft rounded-2xl overflow-x-auto" ref={tableRef}>
+        <Card className="p-5 border-0 shadow-soft rounded overflow-x-auto" ref={tableRef}>
           <div className="mb-4">
             <p className="text-lg font-bold text-slate-800">{teacherRecord.full_name}</p>
             <p className="text-sm text-slate-400">
-              Haftalık Ders Programı {teacherRecord.branches?.name && '— ' + teacherRecord.branches.name}
+              Haftalık Ders Programı {teacherRecord.branches?.name && '· ' + teacherRecord.branches.name}
             </p>
           </div>
           <table className="w-full border-collapse text-sm">
@@ -186,14 +187,14 @@ export default function TeacherPanel() {
                   <td className="p-2 text-slate-400 whitespace-nowrap text-xs">{periodNumber}. Ders</td>
                   {DAYS.map((d) => {
                     const slot = getSlotFor(d.value, periodNumber)
-                    if (!slot) return <td key={d.value} className="p-2 border border-slate-50 bg-slate-50 rounded-lg"></td>
+                    if (!slot) return <td key={d.value} className="p-2 border border-slate-50 bg-slate-50 rounded"></td>
 
                     const entry = findEntry(slot.id)
                     return (
                       <td
                         key={d.value}
                         className={
-                          'p-2 text-center h-16 align-middle rounded-lg border ' +
+                          'p-2 text-center h-16 align-middle rounded border ' +
                           (entry ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 border-slate-100')
                         }
                       >

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Button, Input } from '@heroui/react'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck } from '../components/UiMarks'
 import { supabase } from '../supabaseClient'
 import { supabaseAdmin } from '../supabaseAdminClient'
 import { useAuth } from '../contexts/AuthContext'
 import SelectField from '../components/SelectField'
 import { useToast } from '../contexts/ToastContext'
+import PageHeader from '../components/PageHeader'
 
 export default function UserManager() {
   const { profile } = useAuth()
@@ -167,7 +168,7 @@ export default function UserManager() {
 
           throw new Error(
             'Öğretmen kaydı oluşturulamadı: ' +
-              teacherError.message
+            teacherError.message
           )
         }
 
@@ -209,7 +210,7 @@ export default function UserManager() {
 
       toast.error(
         error.message ||
-          'Kullanıcı oluşturulurken bir hata oluştu.'
+        'Kullanıcı oluşturulurken bir hata oluştu.'
       )
     } finally {
       setLoading(false)
@@ -244,32 +245,17 @@ export default function UserManager() {
   return (
     <div className="p-4 md:p-8">
 
-      {/* ==================================================
-          BAŞLIK
-      ================================================== */}
-
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
-            Kullanıcılar ve Roller
-          </h1>
-
-          <p className="text-slate-400 text-sm mt-1">
-            Erişim seviyelerini ve kullanıcı hesaplarını yönet
-          </p>
-        </div>
-
-        <span className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          Sistem çalışıyor
-        </span>
-      </div>
+      <PageHeader
+        title="Kullanıcılar ve Roller"
+        subtitle="Erişim seviyelerini ve kullanıcı hesaplarını yönet"
+        eyebrow="Yönetim"
+      />
 
       {/* ==================================================
           YENİ HESAP OLUŞTUR
       ================================================== */}
 
-      <div className="bg-white rounded-2xl shadow-soft border border-slate-50 p-6 mb-6">
+      <div className="bg-white rounded-xl shadow-soft border border-slate-50 p-6 mb-6">
 
         <h2 className="font-semibold text-slate-700 mb-1">
           Yeni Hesap Oluştur
@@ -385,10 +371,10 @@ export default function UserManager() {
             )}
 
             <Button
-              color="primary"
+              color="default"
               type="submit"
               isLoading={loading}
-              className="rounded-xl font-medium"
+              className="primary-button rounded font-bold"
             >
               Kullanıcı Oluştur
             </Button>
@@ -401,7 +387,7 @@ export default function UserManager() {
           ERİŞİM DİZİNİ
       ================================================== */}
 
-      <div className="bg-white rounded-2xl shadow-soft border border-slate-50 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-soft border border-slate-50 overflow-hidden">
 
         <div className="p-6 pb-4 flex items-center justify-between">
 
@@ -417,14 +403,14 @@ export default function UserManager() {
 
           <ShieldCheck
             size={18}
-            className="text-blue-500"
+            className="text-[#121a2a]"
           />
 
         </div>
 
         {fetching ? (
           <div className="p-6">
-            <div className="h-32 bg-slate-50 rounded-xl animate-pulse" />
+            <div className="h-32 bg-slate-50 rounded animate-pulse" />
           </div>
         ) : (
           <table className="w-full text-sm">

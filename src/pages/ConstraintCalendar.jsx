@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { DAYS } from '../utils/timeUtils'
 import SelectField from '../components/SelectField'
@@ -15,43 +15,46 @@ export default function ConstraintCalendar() {
   const [fetching, setFetching] = useState(true)
   const toast = useToast()
 
-  useEffect(() => {
-    fetchTeachers()
-    fetchTimeSlots()
-  }, [])
-
-  useEffect(() => {
-    if (selectedTeacher) fetchConstraints(selectedTeacher)
-    else setSelectedCells(new Set())
-  }, [selectedTeacher])
-
-  async function fetchTeachers() {
+  const fetchTeachers = useCallback(async () => {
     const { data, error } = await supabase.from('teachers').select('*').order('id')
     if (error) console.error(error)
     else {
       setTeachers(data)
       if (data.length > 0) setSelectedTeacher(String(data[0].id))
     }
-  }
+  }, [])
 
-  async function fetchTimeSlots() {
+  const fetchTimeSlots = useCallback(async () => {
     setFetching(true)
     const { data, error } = await supabase.from('time_slots').select('*').order('day_of_week').order('period_number')
     if (error) console.error(error)
     else setTimeSlots(data)
     setFetching(false)
-  }
+  }, [])
 
-  async function fetchConstraints(teacherId) {
+  const fetchConstraints = useCallback(async (teacherId) => {
     const { data, error } = await supabase.from('teacher_constraints').select('*').eq('teacher_id', teacherId)
     if (error) {
       console.error(error)
       return
     }
     const cells = new Set()
-    data.forEach((c) => cells.add(c.day_of_week + '|' + c.start_time.slice(0, 5)))
+    data.forEach((constraint) => cells.add(constraint.day_of_week + '|' + constraint.start_time.slice(0, 5)))
     setSelectedCells(cells)
-  }
+  }, [])
+
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      fetchTeachers()
+      fetchTimeSlots()
+    })
+  }, [fetchTeachers, fetchTimeSlots])
+
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      if (selectedTeacher) fetchConstraints(selectedTeacher)
+    })
+  }, [selectedTeacher, fetchConstraints])
 
   const maxPeriods = Math.max(1, ...DAYS.map((d) => timeSlots.filter((s) => s.day_of_week === d.value).length))
 
@@ -118,7 +121,7 @@ export default function ConstraintCalendar() {
         }
       >
         {fetching ? (
-          <div className="h-64 bg-slate-50 rounded-xl animate-pulse"></div>
+          <div className="h-64 bg-slate-50 rounded animate-pulse"></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
@@ -136,7 +139,7 @@ export default function ConstraintCalendar() {
                   return (
                     <tr key={periodNumber}>
                       <td className="py-1.5 pr-2">
-                        <div className="w-11 h-11 rounded-full bg-slate-50 flex flex-col items-center justify-center text-slate-500">
+                        <div className="w-11 h-11 rounded bg-slate-50 flex flex-col items-center justify-center text-slate-500">
                           <span className="text-xs font-semibold leading-none">{periodNumber}</span>
                           <span className="text-[9px] leading-none mt-0.5">{firstSlotOfRow ? firstSlotOfRow.start_time.slice(0, 5) : ''}</span>
                         </div>
@@ -151,7 +154,7 @@ export default function ConstraintCalendar() {
                             <button
                               onClick={() => toggleCell(slot)}
                               className={
-                                'w-full h-11 rounded-xl border text-xs font-medium transition-colors duration-150 ' +
+                                'w-full h-11 rounded border text-xs font-medium transition-colors duration-150 ' +
                                 (isBlocked
                                   ? 'bg-amber-50 border-amber-100 text-amber-600 hover:bg-amber-100'
                                   : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50')
@@ -174,7 +177,7 @@ export default function ConstraintCalendar() {
           <button
             onClick={handleSave}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors duration-150"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded transition-colors duration-150"
           >
             {loading ? 'Kaydediliyor...' : 'Kaydet'}
           </button>

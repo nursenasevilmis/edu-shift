@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Card } from '@heroui/react'
 import { supabase } from '../supabaseClient'
 import { DAYS, computeBlockState } from '../utils/timeUtils'
 import SelectField from '../components/SelectField'
 import { useToast } from '../contexts/ToastContext'
 import { useConfirm } from '../contexts/ConfirmContext'
-import { Wand2 } from 'lucide-react'
+import { Wand2, CalendarDays, Trash2, Info } from '../components/UiMarks'
 import { generateAutoSchedule } from '../utils/autoSchedule'
 
 export default function ScheduleGrid() {
@@ -326,211 +325,102 @@ export default function ScheduleGrid() {
     }
   }
 
-  async function handleClearSchedule() {
-    if (!selectedBranch) return
-
-    if (scheduleEntries.length === 0) {
-      toast.warning('Program zaten boş.')
-      return
-    }
-
-    const ok = await confirmDialog({
-      title: 'Programı tamamen temizle',
-      message:
-        'Bu şubeye ait tüm dersler programdan kaldırılacak. Bu işlem geri alınamaz. Devam etmek istiyor musun?',
-      confirmLabel: 'Tümünü Sil',
-    })
-
-    if (!ok) return
-
-    const { error } = await supabase
-      .from('schedules')
-      .delete()
-      .eq('branch_id', selectedBranch)
-
-    if (error) {
-      toast.error('Program temizlenirken hata oluştu: ' + error.message)
-    } else {
-      setScheduleEntries([])
-      toast.success('Tüm dersler programdan kaldırıldı.')
-    }
-  }
+  const placedHours = scheduleEntries.length
+  const requiredHours = assignments.reduce((sum, assignment) => sum + (assignment.weekly_hours || 0), 0)
+  const completion = requiredHours ? Math.round((Math.min(placedHours, requiredHours) / requiredHours) * 100) : 0
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Program Oluşturucu</h1>
-        <p className="text-slate-400 text-sm mt-1">Dersleri sürükleyip haftalık tabloya yerleştir</p>
-      </div>
-
-      <Card className="p-5 border-0 shadow-soft rounded-2xl mb-4 flex items-center justify-between gap-4 flex-wrap">
-
-        <SelectField
-          label="Sube"
-          value={selectedBranch}
-          onChange={setSelectedBranch}
-          className="min-w-[180px]"
-          options={branches.map((b) => ({
-            value: b.id,
-            label: b.name
-          }))}
-        />
-
-        <div className="flex items-center gap-3">
-
-          <button
-            onClick={handleAutoGenerate}
-            disabled={!selectedBranch}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150"
-          >
-            <Wand2 size={16} />
-            Otomatik Oluştur
-          </button>
-          <button
-            onClick={handleClearBranch}
-            className="flex items-center gap-2 bg-white border border-slate-200 hover:border-rose-200 hover:text-rose-500 text-slate-500 text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150"
-          >
-            Tümünü Temizle
-          </button>
-
-        
-
+    <div className="page-canvas">
+      <div className="page-width" style={{ maxWidth: '1540px' }}>
+        <div className="flex items-end justify-between gap-4 flex-wrap mb-6">
+          <div>
+            <p className="section-kicker mb-2">Program dosyası / yerleşim</p>
+            <h1 className="text-[32px] md:text-[44px] font-semibold text-[var(--ink)] leading-[.96]">Program oluşturucu</h1>
+            <p className="text-[var(--muted)] text-sm mt-3 max-w-2xl leading-relaxed">Dersleri kurallara uygun boşluklara taşı. Otomatik oluşturucu yerleşimi hızlandırır; son karar her zaman sende kalır.</p>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 text-[10px] font-mono uppercase tracking-[.12em] text-[var(--muted)]"><CalendarDays size={15} color="var(--brand)" /> Haftalık görünüm</div>
         </div>
 
-      </Card>
+        <section className="surface schedule-toolbar mb-4">
+          <div>
+            <SelectField label="Çalışılan şube" value={selectedBranch} onChange={setSelectedBranch} className="min-w-[210px]" options={branches.map((branch) => ({ value: branch.id, label: branch.name }))} />
+            <p className="schedule-toolbar-note"><Info size={13} /> Dolu hücrelerin içinde kaldırma aksiyonu var; yanlışlıkla silme yok.</p>
+          </div>
+          <div className="schedule-toolbar-actions">
+            <button onClick={handleAutoGenerate} disabled={!selectedBranch} className="primary-button"><Wand2 size={15} /> Otomatik oluştur</button>
+            <button onClick={handleClearBranch} disabled={!selectedBranch} className="secondary-button"><Trash2 size={15} /> Şubeyi temizle</button>
+          </div>
+        </section>
 
-      <div className="flex gap-4">
-        <Card className="p-5 border-0 shadow-soft rounded-2xl w-64 shrink-0 h-fit">
-          <h2 className="font-semibold text-sm text-slate-700 mb-1">Dersler ve Öğretmenler</h2>
-          <p className="text-xs text-slate-400 mb-4">Kartı sürükleyip tabloya bırak</p>
-          <div className="flex flex-col gap-2">
-            {assignments.map((a) => {
-              const placedCount = entriesForAssignment(a.id).length
-              const state = blockStateByAssignment[a.id]
-
-              // Blok yapısı yoksa: eski davranış, tek saatlik kart sürüklenir
-              if (!state?.hasPattern) {
-                const remaining = a.weekly_hours - placedCount
+        <div className="schedule-layout">
+          <aside className="surface schedule-source">
+            <div className="flex items-start justify-between gap-3"><div><h2 className="schedule-panel-title">Ders havuzu</h2><p className="schedule-panel-copy">Kartı sürükleyip tabloya bırak. Bloklar kendi bütünlüğünü korur.</p></div><Info size={16} color="var(--muted)" /></div>
+            <div className="assignment-stack">
+              {assignments.map((assignment) => {
+                const placedCount = entriesForAssignment(assignment.id).length
+                const state = blockStateByAssignment[assignment.id]
+                if (!state?.hasPattern) {
+                  const remaining = assignment.weekly_hours - placedCount
+                  return (
+                    <div key={assignment.id} draggable={remaining > 0} onDragStart={(event) => handleDragStart(event, assignment, 1)} className={'assignment-card ' + (remaining > 0 ? 'is-ready' : 'is-empty')}>
+                      <p className="assignment-card-title">{assignment.courses?.course_name}</p>
+                      <p className="assignment-card-teacher">{assignment.teachers?.full_name}</p>
+                      <div className="assignment-card-meta"><span>{placedCount}/{assignment.weekly_hours} saat</span><span>{remaining > 0 ? 'sürükle' : 'tamam'}</span></div>
+                    </div>
+                  )
+                }
                 return (
-                  <div
-                    key={a.id}
-                    draggable={remaining > 0}
-                    onDragStart={(e) => handleDragStart(e, a, 1)}
-                    className={
-                      'p-3 rounded-xl border transition-all duration-150 ' +
-                      (remaining > 0
-                        ? 'cursor-grab active:cursor-grabbing bg-blue-50 border-blue-100 hover:shadow-soft hover:-translate-y-0.5'
-                        : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed')
-                    }
-                  >
-                    <p className="font-medium text-sm text-slate-700">{a.courses?.course_name}</p>
-                    <p className="text-xs text-slate-500">{a.teachers?.full_name}</p>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      {placedCount}/{a.weekly_hours} saat
-                    </p>
+                  <div key={assignment.id} className="assignment-card">
+                    <p className="assignment-card-title">{assignment.courses?.course_name}</p>
+                    <p className="assignment-card-teacher">{assignment.teachers?.full_name}</p>
+                    <div className="assignment-card-meta"><span>{placedCount}/{assignment.weekly_hours} saat</span><span>{assignment.block_pattern}</span></div>
+                    <div className="assignment-blocks">
+                      {state.remainingBlocks.map((size, index) => <div key={'r' + index} draggable onDragStart={(event) => handleDragStart(event, assignment, size)} title={`${size} saatlik blok`} className="block-pill">{size} saat</div>)}
+                      {state.placedRuns.map((run, index) => <div key={'p' + index} className="block-pill is-placed">{run.length} saat</div>)}
+                    </div>
                   </div>
                 )
-              }
+              })}
+              {assignments.length === 0 && <div className="schedule-empty">Bu şube için henüz ders ataması yok.</div>}
+            </div>
+          </aside>
 
-              // Blok yapısı var: her blok parçası (2, 3 gibi) ayrı ayrı sürüklenebilir kart olarak gösterilir
-              return (
-                <div key={a.id} className="p-3 rounded-xl border bg-indigo-50 border-indigo-100">
-                  <p className="font-medium text-sm text-slate-700">{a.courses?.course_name}</p>
-                  <p className="text-xs text-slate-500 mb-2">{a.teachers?.full_name}</p>
-                  <p className="text-[11px] text-slate-400 mb-2">
-                    {placedCount}/{a.weekly_hours} saat &middot; blok: {a.block_pattern}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {state.remainingBlocks.map((size, idx) => (
-                      <div
-                        key={'r' + idx}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, a, size)}
-                        title={size + ' saatlik ardışık blok - sürükle'}
-                        className="cursor-grab active:cursor-grabbing px-2.5 py-1.5 rounded-lg bg-white border border-indigo-200 text-xs font-medium text-indigo-700 hover:shadow-soft hover:-translate-y-0.5 transition-all duration-150"
-                      >
-                        {size} saat
-                      </div>
+          <section className="surface schedule-grid-panel">
+            <div className="schedule-grid-head"><div><h2 className="schedule-panel-title">Haftalık yerleşim</h2><p className="schedule-panel-copy">Bir hücreyi doldurmak için ders havuzundan sürükle. Çakışmalar kaydedilmeden önce engellenir.</p></div><div className="schedule-grid-stat">{fetching ? '—' : `${completion}%`}<span>{placedHours} / {requiredHours || 0} saat</span></div></div>
+            {fetching ? <div className="h-96 bg-[#f1ede1] rounded animate-pulse mt-4" /> : (
+              <div className="schedule-table-wrap">
+                <table className="schedule-table">
+                  <thead><tr><th>Saat</th>{DAYS.map((day) => <th key={day.value}>{day.label}</th>)}</tr></thead>
+                  <tbody>
+                    {Array.from({ length: maxPeriods }, (_, index) => index + 1).map((periodNumber) => (
+                      <tr key={periodNumber}>
+                        <td><span className="schedule-time">{periodNumber}. ders</span></td>
+                        {DAYS.map((day) => {
+                          const slot = getSlotFor(day.value, periodNumber)
+                          if (!slot) return <td key={day.value} />
+                          const entry = findScheduleEntry(slot.id)
+                          const cellKey = day.value + '-' + periodNumber
+                          const isDragOver = dragOverCell === cellKey
+                          return (
+                            <td key={day.value} onDragOver={(event) => handleDragOver(event, cellKey)} onDragLeave={handleDragLeave} onDrop={(event) => handleDrop(event, slot)} className={isDragOver ? 'is-over' : ''}>
+                              <span className="schedule-time">{slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}</span>
+                              {entry ? (
+                                <div className="schedule-cell-entry">
+                                  <div><strong>{entry.course_assignments?.courses?.course_name}</strong><small>{entry.course_assignments?.teachers?.full_name}</small></div>
+                                  <button type="button" onClick={() => handleRemove(entry)} className="schedule-remove">Kaldır</button>
+                                </div>
+                              ) : <span className="schedule-cell-empty">+</span>}
+                            </td>
+                          )
+                        })}
+                      </tr>
                     ))}
-                    {state.placedRuns.map((run, idx) => (
-                      <div
-                        key={'p' + idx}
-                        title="Yerleştirildi"
-                        className="px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700"
-                      >
-                        ✓ {run.length} saat
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-            {assignments.length === 0 && (
-              <p className="text-xs text-slate-400">Bu şube için atama yok.</p>
+                  </tbody>
+                </table>
+              </div>
             )}
-          </div>
-        </Card>
-
-        <Card className="p-5 border-0 shadow-soft rounded-2xl flex-1 overflow-x-auto">
-          {fetching ? (
-            <div className="h-96 bg-slate-50 rounded-xl animate-pulse"></div>
-          ) : (
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr>
-                  <th className="p-2 text-left w-32 text-xs font-medium text-slate-400">Saat</th>
-                  {DAYS.map((d) => (
-                    <th key={d.value} className="p-2 text-center text-xs font-medium text-slate-500">{d.label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: maxPeriods }, (_, i) => i + 1).map((periodNumber) => (
-                  <tr key={periodNumber}>
-                    <td className="p-2 text-slate-400 whitespace-nowrap text-xs">{periodNumber}. Ders</td>
-                    {DAYS.map((d) => {
-                      const slot = getSlotFor(d.value, periodNumber)
-                      if (!slot) {
-                        return <td key={d.value} className="p-2 border border-slate-50 bg-slate-50 rounded-lg"></td>
-                      }
-                      const entry = findScheduleEntry(slot.id)
-                      const cellKey = d.value + '-' + periodNumber
-                      const isDragOver = dragOverCell === cellKey
-
-                      return (
-                        <td
-                          key={d.value}
-                          onDragOver={(e) => handleDragOver(e, cellKey)}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDrop(e, slot)}
-                          onClick={() => entry && handleRemove(entry)}
-                          className={
-                            'p-2 text-center h-16 align-middle rounded-lg border transition-all duration-150 ' +
-                            (entry
-                              ? 'bg-blue-50 border-blue-100 hover:bg-blue-100 cursor-pointer'
-                              : isDragOver
-                                ? 'bg-emerald-50 border-emerald-300 border-2'
-                                : 'bg-slate-50 border-slate-100')
-                          }
-                        >
-                          <p className="text-[10px] text-slate-400 mb-1">
-                            {slot.start_time.slice(0, 5)}-{slot.end_time.slice(0, 5)}
-                          </p>
-                          {entry && (
-                            <div>
-                              <p className="font-medium text-xs text-slate-700">{entry.course_assignments?.courses?.course_name}</p>
-                              <p className="text-[11px] text-slate-500">{entry.course_assignments?.teachers?.full_name}</p>
-                            </div>
-                          )}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Card>
+          </section>
+        </div>
       </div>
     </div>
   )

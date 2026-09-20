@@ -10,167 +10,126 @@ import {
   CalendarX,
   ClipboardList,
   SlidersHorizontal,
-  User,
   ShieldCheck,
-  BookMarked,
   Menu,
   X,
-} from 'lucide-react'
+  ChevronRight,
+  LogOut,
+} from '../components/UiMarks'
 
-const menuItems = [
-  { to: '/dashboard', label: 'Kontrol Paneli', icon: LayoutGrid },
-  { to: '/branches', label: 'Şubeler', icon: Layers },
-  { to: '/courses', label: 'Dersler', icon: BookOpen },
-  { to: '/teachers', label: 'Öğretmenler', icon: Users },
-  { to: '/constraints', label: 'Öğretmen Kısıtları', icon: CalendarX },
-  { to: '/assignments', label: 'Ders Atamaları', icon: ClipboardList },
-  { to: '/schedule', label: 'Program Oluşturucu', icon: CalendarClock },
-  { to: '/time-settings', label: 'Zaman Ayarları', icon: SlidersHorizontal },
+const menuGroups = [
+  { label: 'Planlama', items: [{ to: '/dashboard', label: 'Kontrol paneli', icon: LayoutGrid }] },
+  {
+    label: 'Program dosyası',
+    items: [
+      { to: '/schedule', label: 'Program oluşturucu', icon: CalendarClock },
+      { to: '/assignments', label: 'Ders atamaları', icon: ClipboardList },
+      { to: '/constraints', label: 'Öğretmen kısıtları', icon: CalendarX },
+    ],
+  },
+  {
+    label: 'Okul kayıtları',
+    items: [
+      { to: '/branches', label: 'Şubeler', icon: Layers },
+      { to: '/courses', label: 'Dersler', icon: BookOpen },
+      { to: '/teachers', label: 'Öğretmenler', icon: Users },
+    ],
+  },
 ]
 
 export default function AdminLayout() {
   const { profile, signOut } = useAuth()
   const location = useLocation()
-
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  const items = [...menuItems]
-
+  const roleLabels = { admin: 'Okul müdürü', editor: 'Editör', teacher: 'Öğretmen' }
+  const initials = (profile?.full_name || '?').split(' ').map((word) => word[0]).join('').slice(0, 2).toUpperCase()
+  const items = [...menuGroups]
   if (profile?.role === 'admin') {
-    items.push({ to: '/users', label: 'Kullanicilar', icon: ShieldCheck })
+    items.push({
+      label: 'Yönetim',
+      items: [
+        { to: '/users', label: 'Kullanıcı yönetimi', icon: ShieldCheck },
+        { to: '/time-settings', label: 'Zaman ayarları', icon: SlidersHorizontal },
+      ],
+    })
   }
-
-  function isActive(to) {
-    return location.pathname === to
-  }
-
-  const initials = (profile?.full_name || '?')
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-
-  const roleLabels = { admin: 'Yonetici', editor: 'Editor', teacher: 'Ogretmen' }
 
   const sidebarContent = (
     <>
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        title={collapsed ? 'Menuyu ac' : 'Menuyu daralt'}
-        className={'p-5 flex items-center gap-3 border-b border-slate-50 w-full text-left hover:bg-slate-50 transition-colors duration-150 ' + (collapsed ? 'justify-center' : '')}
-      >
-        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0">
-          <BookMarked size={20} />
-        </div>
-        {!collapsed && (
-          <div className="min-w-0">
-            <p className="font-bold text-slate-800 text-sm leading-tight truncate">EduSchedule</p>
-            <p className="text-[10px] tracking-wider text-slate-400 font-medium">DERS PROGRAMI</p>
-          </div>
-        )}
-      </button>
-
-      {!collapsed && (
-        <div className="px-5 pt-5 pb-2">
-          <p className="text-[10px] tracking-wider text-slate-400 font-semibold">ÇALIŞMA ALANI</p>
-        </div>
-      )}
-
-      <nav className={'flex-1 px-3 flex flex-col gap-1 overflow-y-auto ' + (collapsed ? 'mt-4' : 'mt-1')}>
-        {items.map((item) => {
-          const Icon = item.icon
-          const active = isActive(item.to)
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              onClick={() => setMobileOpen(false)}
-              title={collapsed ? item.label : undefined}
-              className={
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-150 shrink-0 ' +
-                (collapsed ? 'justify-center' : '') +
-                ' ' +
-                (active
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700')
-              }
-            >
-              <Icon size={18} strokeWidth={2} className="shrink-0" />
-              {!collapsed && item.label}
-            </Link>
-          )
-        })}
-      </nav>
-
-      <div className="p-4 border-t border-slate-50">
-        <div className={'flex items-center gap-3 px-2 py-2 rounded-xl ' + (collapsed ? 'justify-center' : '')}>
-          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-xs shrink-0">
-            {initials}
-          </div>
+      <div className={'sidebar-brand ' + (collapsed ? 'is-collapsed' : '')}>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="sidebar-toggle"
+          
+        >
+          <span className="brand-chip">ES</span>
           {!collapsed && (
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-700 truncate">{profile?.full_name}</p>
-              <p className="text-xs text-slate-400">{roleLabels[profile?.role] || profile?.role}</p>
-            </div>
+            <span>
+              <span className="brand-name">EduShift</span>
+              <span className="brand-subtitle">School ops</span>
+            </span>
+          )}
+        </button>
+      </div>
+      <nav className="sidebar-nav" aria-label="Ana navigasyon">
+        {items.map((group) => (
+          <div key={group.label} className="sidebar-group">
+            {!collapsed && <p className="sidebar-label">{group.label}</p>}
+            {group.items.map((item) => {
+              const Icon = item.icon
+              const active = location.pathname === item.to
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setMobileOpen(false)}
+                  title={collapsed ? item.label : undefined}
+                  className={'sidebar-item ' + (collapsed ? 'is-collapsed ' : '') + (active ? 'is-active' : '')}
+                >
+                  <span className="nav-icon"><Icon /></span>
+                  {!collapsed && <span className="sidebar-item-label">{item.label}</span>}
+                  {!collapsed && active && <ChevronRight />}
+                </Link>
+              )
+            })}
+          </div>
+        ))}
+      </nav>
+      <div className="sidebar-footer">
+        {!collapsed && <p className="sidebar-note">Yayın öncesi kontrol listesini tamamlayınca programın paylaşılmaya hazır.</p>}
+        <div className={'profile-row ' + (collapsed ? 'justify-center' : '')}>
+          <span className="profile-avatar">{initials}</span>
+          {!collapsed && (
+            <span className="min-w-0">
+              <p className="profile-name">{profile?.full_name || 'Kullanıcı'}</p>
+              <p className="profile-role">{roleLabels[profile?.role] || profile?.role}</p>
+            </span>
           )}
         </div>
-        {!collapsed && (
-          <button
-            onClick={signOut}
-            className="w-full mt-2 text-xs text-slate-400 hover:text-rose-500 transition-colors duration-150 text-left px-2"
-          >
-            Çıkış Yap
-          </button>
-        )}
-        {collapsed && (
-          <button
-            onClick={signOut}
-            title="Cikis yap"
-            className="w-full mt-2 flex justify-center text-slate-400 hover:text-rose-500 transition-colors duration-150"
-          >
-            <X size={16} />
-          </button>
-        )}
+        <button onClick={signOut} title="Çıkış yap" className={'sign-out ' + (collapsed ? 'w-full justify-center' : '')}>
+          <LogOut />
+          {!collapsed && 'Çıkış yap'}
+        </button>
       </div>
     </>
   )
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
-      <aside
-        className={
-          'hidden md:flex flex-col bg-white border-r border-slate-100 transition-all duration-200 ' +
-          (collapsed ? 'w-20' : 'w-64')
-        }
-      >
-        {sidebarContent}
-      </aside>
-
+    <div className="app-shell">
+      <aside className={'app-sidebar ' + (collapsed ? 'is-collapsed' : '')}>{sidebarContent}</aside>
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          <div
-            className="absolute inset-0 bg-slate-900/40"
-            onClick={() => setMobileOpen(false)}
-          ></div>
-          <aside className="relative w-64 bg-white flex flex-col shadow-xl">
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 text-slate-400"
-            >
-              <X size={20} />
-            </button>
+        <div className="mobile-drawer">
+          <div className="mobile-drawer-backdrop" onClick={() => setMobileOpen(false)} />
+          <aside className="mobile-drawer-panel">
+            <button onClick={() => setMobileOpen(false)} className="mobile-drawer-close" aria-label="Menüyü kapat"><X /></button>
             {sidebarContent}
           </aside>
         </div>
       )}
-
-      <main className="flex-1 flex flex-col min-w-0">
-
-        <div className="flex-1 overflow-y-auto">
-          <Outlet />
-        </div>
+      <main className="app-main">
+        
+        <div className="flex-1 min-w-0 overflow-y-auto"><Outlet /></div>
       </main>
     </div>
   )

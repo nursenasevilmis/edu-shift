@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, BookOpen, Layers, ShieldCheck, AlertTriangle, CalendarClock, UserCheck, Gauge } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 import PageHeader from '../components/PageHeader'
-import PageCard from '../components/PageCard'
+import { AlertTriangle, ArrowUpRight, CheckCircle2, CalendarClock, Users, BookOpen, Layers, ShieldCheck } from '../components/UiMarks'
 
 const MAX_HEALTHY_WEEKLY_HOURS = 30
+const formatDate = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
 
 export default function Dashboard() {
   const { profile } = useAuth()
@@ -17,11 +18,7 @@ export default function Dashboard() {
   const [scheduleCount, setScheduleCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchAll()
-  }, [])
-
-  async function fetchAll() {
+  const fetchAll = useCallback(async () => {
     const results = await Promise.all([
       supabase.from('teachers').select('id, full_name'),
       supabase.from('courses').select('id, course_name'),
@@ -30,200 +27,107 @@ export default function Dashboard() {
       supabase.from('course_assignments').select('id, course_id, teacher_id, weekly_hours'),
       supabase.from('schedules').select('id', { count: 'exact', head: true }),
     ])
-
-    const teachersData = results[0].data || []
-    const coursesData = results[1].data || []
-
-    setTeachers(teachersData)
-    setCourses(coursesData)
-    setStats({
-      teachers: teachersData.length,
-      courses: coursesData.length,
-      branches: results[2].count || 0,
-      constraints: results[3].count || 0,
-    })
+    const teacherData = results[0].data || []
+    const courseData = results[1].data || []
+    setTeachers(teacherData)
+    setCourses(courseData)
+    setStats({ teachers: teacherData.length, courses: courseData.length, branches: results[2].count || 0, constraints: results[3].count || 0 })
     setAssignments(results[4].data || [])
     setScheduleCount(results[5].count || 0)
     setLoading(false)
-  }
+  }, [])
 
-  const totalRequiredHours = assignments.reduce((sum, a) => sum + (a.weekly_hours || 0), 0)
-  const cappedScheduleCount = Math.min(scheduleCount, totalRequiredHours)
-  const placedPercent = totalRequiredHours > 0
-    ? Math.round((cappedScheduleCount / totalRequiredHours) * 100)
-    : 0
-  const remainingBlocks = Math.max(totalRequiredHours - scheduleCount, 0)
+  useEffect(() => {
+    void Promise.resolve().then(fetchAll)
+  }, [fetchAll])
 
-  // Hangi dersler hiç öğretmene atanmamış (hiçbir şubede)?
-  const assignedCourseIds = new Set(assignments.map((a) => a.course_id))
-  const coursesWithoutTeacher = courses.filter((c) => !assignedCourseIds.has(c.id))
-
-  // Öğretmen başına toplam haftalık saat, aşırı yüklenme kontrolü
+  const totalRequiredHours = assignments.reduce((sum, assignment) => sum + (assignment.weekly_hours || 0), 0)
+  const placed = Math.min(scheduleCount, totalRequiredHours)
+  const remaining = Math.max(totalRequiredHours - scheduleCount, 0)
+  const assignedCourseIds = new Set(assignments.map((assignment) => assignment.course_id))
+  const coursesWithoutTeacher = courses.filter((course) => !assignedCourseIds.has(course.id))
   const hoursByTeacher = {}
-  assignments.forEach((a) => {
-    hoursByTeacher[a.teacher_id] = (hoursByTeacher[a.teacher_id] || 0) + (a.weekly_hours || 0)
+  assignments.forEach((assignment) => {
+    hoursByTeacher[assignment.teacher_id] = (hoursByTeacher[assignment.teacher_id] || 0) + (assignment.weekly_hours || 0)
   })
-  const overloadedTeachers = teachers.filter((t) => (hoursByTeacher[t.id] || 0) > MAX_HEALTHY_WEEKLY_HOURS)
-
-  const cards = [
-    { label: 'Öğretmenler', value: stats.teachers, sub: 'Aktif öğretim kadrosu', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', badge: 'BU DÖNEM' },
-    { label: 'Dersler', value: stats.courses, sub: 'Tanımlı ders sayısı', icon: BookOpen, color: 'text-violet-600', bg: 'bg-violet-50', badge: 'BU DÖNEM' },
-    { label: 'Şubeler', value: stats.branches, sub: 'Toplam şube', icon: Layers, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'BU DÖNEM' },
-    { label: 'Sistem Durumu', value: 'Sağlıklı', sub: 'Kurallar çalışıyor', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'CANLI', isText: true },
+  const overloadedTeachers = teachers.filter((teacher) => (hoursByTeacher[teacher.id] || 0) > MAX_HEALTHY_WEEKLY_HOURS)
+  const ready = remaining === 0 && coursesWithoutTeacher.length === 0 && overloadedTeachers.length === 0
+  const completion = totalRequiredHours ? Math.round((placed / totalRequiredHours) * 100) : 0
+  const checks = [
+    { label: 'Ders saatleri yerleşimi', value: remaining === 0 ? 'Tamamlandı' : `${remaining} saat eksik`, detail: `${placed} / ${totalRequiredHours || 0} saat yerleşti`, to: '/schedule', good: remaining === 0 },
+    { label: 'Ders ve öğretmen eşleşmesi', value: coursesWithoutTeacher.length === 0 ? 'Tamamlandı' : `${coursesWithoutTeacher.length} ders eksik`, detail: coursesWithoutTeacher.length ? coursesWithoutTeacher.slice(0, 2).map((course) => course.course_name).join(', ') : 'Tüm derslerin sorumlusu var', to: '/assignments', good: coursesWithoutTeacher.length === 0 },
+    { label: 'Öğretmen haftalık yükü', value: overloadedTeachers.length === 0 ? 'Dengeli' : `${overloadedTeachers.length} kayıt incelenmeli`, detail: overloadedTeachers.length ? overloadedTeachers.slice(0, 2).map((teacher) => teacher.full_name).join(', ') : `Her öğretmen ${MAX_HEALTHY_WEEKLY_HOURS} saat altında`, to: '/assignments', good: overloadedTeachers.length === 0 },
   ]
-
-  const attentionItems = [
-    remainingBlocks > 0
-      ? { icon: CalendarClock, title: remainingBlocks + ' blok yerleşmedi', sub: 'Program Oluşturucuyu kullanarak tamamla', tone: 'warn', to: '/schedule' }
-      : { icon: ShieldCheck, title: 'Tüm bloklar yerleşti', sub: 'Program tamamlanmış görünüyor', tone: 'ok' },
-
-    coursesWithoutTeacher.length > 0
-      ? {
-          icon: UserCheck,
-          title: coursesWithoutTeacher.length + ' dersin öğretmeni yok',
-          sub: coursesWithoutTeacher.slice(0, 3).map((c) => c.course_name).join(', ') + (coursesWithoutTeacher.length > 3 ? '...' : ''),
-          tone: 'warn',
-          to: '/assignments',
-        }
-      : { icon: UserCheck, title: 'Tüm derslerin öğretmeni var', sub: 'Eksik ders sahibi bulunmuyor', tone: 'ok' },
-
-    overloadedTeachers.length > 0
-      ? {
-          icon: Gauge,
-          title: overloadedTeachers.length + ' öğretmen çok yüklü (>' + MAX_HEALTHY_WEEKLY_HOURS + ' saat)',
-          sub: overloadedTeachers.slice(0, 3).map((t) => t.full_name).join(', ') + (overloadedTeachers.length > 3 ? '...' : ''),
-          tone: 'warn',
-          to: '/assignments',
-        }
-      : { icon: Gauge, title: 'Öğretmen yükü dengeli', sub: 'Haftalık ' + MAX_HEALTHY_WEEKLY_HOURS + ' saati aşan öğretmen yok', tone: 'ok' },
+  const summary = [
+    { label: 'Öğretmen', value: stats.teachers, icon: Users, tone: 'blue' },
+    { label: 'Ders', value: stats.courses, icon: BookOpen, tone: 'lime' },
+    { label: 'Şube', value: stats.branches, icon: Layers, tone: 'coral' },
+    { label: 'Kısıt', value: stats.constraints, icon: ShieldCheck, tone: 'slate' },
   ]
 
   return (
-    <div className="p-4 md:p-8">
-      <PageHeader
-        title={'Merhaba, ' + (profile?.full_name || '')}
-        subtitle="Haftalık ders programının genel durumu"
-      />
+    <div className="page-canvas">
+      <div className="page-width">
+        <PageHeader title={`Merhaba, ${profile?.full_name?.split(' ')[0] || 'Müdür'}`} subtitle={`${formatDate.format(new Date())} · Haftalık programın yayınlama dosyası`} eyebrow="Çalışma alanı" />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-        {cards.map((c) => {
-          const Icon = c.icon
-          return (
-            <PageCard key={c.label} className="hover:-translate-y-0.5 transition-transform duration-200">
-              <div className="flex items-center justify-between mb-5">
-                <div className={'w-11 h-11 rounded-xl ' + c.bg + ' flex items-center justify-center ' + c.color}>
-                  <Icon size={20} strokeWidth={2} />
-                </div>
-                <span className="text-[10px] font-semibold tracking-wider text-slate-300 bg-slate-50 px-2 py-1 rounded-full">
-                  {c.badge}
-                </span>
-              </div>
-              {loading ? (
-                <div className="h-9 w-16 bg-slate-100 rounded-md animate-pulse mb-2"></div>
-              ) : (
-                <p className={'font-bold ' + (c.isText ? 'text-2xl' : 'text-3xl') + ' text-slate-800'}>{c.value}</p>
-              )}
-              <p className="text-sm font-medium text-slate-600 mt-1">{c.label}</p>
-              <p className="text-xs text-slate-400">{c.sub}</p>
-            </PageCard>
-          )
-        })}
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <PageCard
-          title="Program İlerlemesi"
-          description="Tabloya yerleştirilen korumalı bloklar"
-          action={
-            <span className="text-[10px] font-semibold tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
-              BU HAFTA
-            </span>
-          }
-        >
-          <div className="flex items-center gap-6">
-            <div className="relative w-28 h-28 shrink-0">
-              <svg viewBox="0 0 36 36" className="w-28 h-28 -rotate-90">
-                <circle cx="18" cy="18" r="16" fill="none" stroke="#f1f5f9" strokeWidth="3.5" />
-                <circle
-                  cx="18" cy="18" r="16" fill="none"
-                  stroke="#2563eb" strokeWidth="3.5" strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 16}
-                  strokeDashoffset={2 * Math.PI * 16 * (1 - placedPercent / 100)}
-                  className="transition-all duration-700"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-slate-800">{placedPercent}%</span>
-                <span className="text-[10px] text-slate-400 tracking-wide">YERLEŞTİ</span>
-              </div>
-            </div>
-
-            <div className="flex-1 flex flex-col gap-4 text-sm">
-              <div>
-                <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-slate-500">Yerleşen ders blokları</span>
-                  <span className="font-medium text-slate-700">{cappedScheduleCount} / {totalRequiredHours}</span>
-                </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-600 rounded-full transition-all duration-700" style={{ width: placedPercent + '%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-slate-500">Öğretmeni olmayan ders</span>
-                  <span className="font-medium text-slate-700">{coursesWithoutTeacher.length} / {courses.length}</span>
-                </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className={'h-full rounded-full ' + (coursesWithoutTeacher.length > 0 ? 'bg-amber-400' : 'bg-emerald-500')}
-                    style={{ width: courses.length > 0 ? (100 - (coursesWithoutTeacher.length / courses.length) * 100) + '%' : '100%' }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-slate-500">Yükü dengeli öğretmen</span>
-                  <span className="font-medium text-slate-700">{stats.teachers - overloadedTeachers.length} / {stats.teachers}</span>
-                </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className={'h-full rounded-full ' + (overloadedTeachers.length > 0 ? 'bg-rose-400' : 'bg-emerald-500')}
-                    style={{ width: stats.teachers > 0 ? (100 - (overloadedTeachers.length / stats.teachers) * 100) + '%' : '100%' }}
-                  ></div>
-                </div>
-              </div>
+        <motion.section className="dashboard-hero" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .45, ease: [.2, .8, .2, 1] }}>
+          <div>
+            <p className="section-kicker">Dosya durumu / yayın öncesi kontrol</p>
+            <h2>{ready ? 'Program yayınlanmaya hazır.' : 'Yayın öncesi kontroller sürüyor.'}</h2>
+            <p className="dashboard-hero-copy">Bu ekran okulun haftalık programını paylaşmadan önce müdürün görmesi gereken eksikleri tek sırada toplar. Her satır seni doğrudan ilgili düzeltmeye götürür.</p>
+            <div className="flex flex-wrap items-center gap-2 mt-6">
+              <Link to="/schedule" className="primary-button">Program dosyasını aç <ArrowUpRight size={16} /></Link>
+              <span className="inline-flex items-center gap-2 text-[11px] font-bold text-[var(--muted)]"><CalendarClock size={15} /> Haftalık görünüm</span>
             </div>
           </div>
-        </PageCard>
-
-        <PageCard
-          title="Dikkat Gerektiren"
-          description="Yayınlamadan önce bunları çözümle"
-          action={
-            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
-              <AlertTriangle size={15} className="text-amber-500" />
-            </div>
-          }
-        >
-          <div className="flex flex-col gap-2.5">
-            {attentionItems.map((item, i) => {
-              const Icon = item.icon
-              const isOk = item.tone === 'ok'
-              const content = (
-                <div className={'flex items-start gap-3 p-3.5 rounded-xl transition-colors duration-150 ' + (isOk ? 'bg-slate-50' : 'bg-amber-50 hover:bg-amber-100')}>
-                  <div className={'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ' + (isOk ? 'bg-white text-slate-400' : 'bg-white text-amber-500')}>
-                    <Icon size={15} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-700">{item.title}</p>
-                    <p className="text-xs text-slate-400 truncate">{item.sub}</p>
-                  </div>
-                </div>
-              )
-              return item.to ? <Link key={i} to={item.to}>{content}</Link> : <div key={i}>{content}</div>
-            })}
+          <div className="dashboard-score">
+            <p className="dashboard-score-value">{loading ? '—' : `${completion}%`}</p>
+            <p className="dashboard-score-label">yerleşim tamamlandı</p>
+            <p className="dashboard-score-label">{ready ? 'son kontrol bekliyor' : `${checks.filter((check) => !check.good).length} kontrol açık`}</p>
           </div>
-        </PageCard>
+        </motion.section>
+
+        <section className="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-4">
+          {summary.map((item) => {
+            const Icon = item.icon
+            return (
+              <div key={item.label} className="surface p-4 flex items-center justify-between">
+                <div><p className="text-[11px] font-bold text-[var(--muted)]">{item.label}</p><p className="text-2xl font-extrabold tracking-tight text-[var(--ink)] mt-2">{loading ? '—' : item.value}</p></div>
+                <span className={'w-10 h-10 rounded-xl flex items-center justify-center bg-' + item.tone}><Icon size={18} /></span>
+              </div>
+            )
+          })}
+        </section>
+
+        <section className="checklist" aria-labelledby="checklist-title">
+          <div className="checklist-head"><span>No.</span><span id="checklist-title">Kontrol</span><span>Kanıt</span><span>Durum</span></div>
+          {checks.map((check, index) => (
+            <Link key={check.label} to={check.to} className="checklist-row">
+              <span className="checklist-number">0{index + 1}</span>
+              <span><span className="checklist-title">{check.label}</span><span className="checklist-detail">{check.detail}</span></span>
+              <span className="checklist-value">{check.value}</span>
+              <span className={'checklist-status ' + (check.good ? 'is-good' : 'is-alert')}>
+                {check.good ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+                {check.good ? 'uygun' : 'incele'}
+              </span>
+            </Link>
+          ))}
+        </section>
+
+        <div className="dashboard-lower">
+          <section className="surface dashboard-panel">
+            <div className="dashboard-panel-head"><div><h2 className="dashboard-panel-title">Okul özeti</h2><p className="dashboard-panel-description">Sistemde kayıtlı operasyon verisi</p></div><CalendarClock size={18} color="var(--cobalt)" /></div>
+            <dl className="dashboard-list">
+              {summary.map((item) => <div key={item.label} className="dashboard-list-row"><dt>{item.label}</dt><dd>{loading ? '—' : item.value}</dd></div>)}
+            </dl>
+          </section>
+          <section className="surface dashboard-panel dashboard-next">
+            <div><div className="dashboard-panel-head"><div><h2 className="dashboard-panel-title">Sıradaki karar</h2><p className="dashboard-panel-description">Dosyanın kapanması için önerilen adım</p></div><ArrowUpRight size={18} color="var(--coral)" /></div><p className="dashboard-next-copy">{ready ? 'Programı paylaşmadan önce son görünümü ve PDF çıktısını kontrol et. Hazır olduğunda program oluşturucudan yayına geçebilirsin.' : 'Önce program oluşturucuda boş saatleri tamamla. Ardından atamaları ve öğretmen yüklerini tekrar kontrol et.'}</p></div>
+            <Link to="/schedule" className="text-button">Program dosyasını aç <ArrowUpRight size={14} /></Link>
+          </section>
+        </div>
+
+        <footer className="dashboard-footer"><span>EduShift · Okul operasyon merkezi</span><a href="/terms">Şartlar</a><a href="/privacy">Gizlilik</a></footer>
       </div>
     </div>
   )

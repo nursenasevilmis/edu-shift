@@ -1,5 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback } from 'react'
-import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react'
+import { CheckCircle2, XCircle, AlertTriangle, Info, X } from '../components/UiMarks'
 
 const ToastContext = createContext()
 
@@ -7,7 +8,7 @@ const ICONS = { success: CheckCircle2, error: XCircle, warning: AlertTriangle, i
 const STYLES = {
     success: 'bg-white border-emerald-100 text-emerald-600',
     error: 'bg-white border-rose-100 text-rose-600',
-    warning: 'bg-white border-amber-100 text-amber-600',
+    warning: 'bg-white border-slate-200 text-slate-700',
     info: 'bg-white border-blue-100 text-blue-600',
 }
 
@@ -43,7 +44,7 @@ export function ToastProvider({ children }) {
                         <div
                             key={t.id}
                             className={
-                                'flex items-start gap-3 p-4 rounded-xl border shadow-lg animate-toast-in ' +
+                                'flex items-start gap-3 p-4 rounded border shadow-lg animate-toast-in ' +
                                 (STYLES[t.type] || STYLES.info)
                             }
                         >
