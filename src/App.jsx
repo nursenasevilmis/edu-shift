@@ -16,12 +16,15 @@ import Dashboard from './pages/Dashboard'
 import { ToastProvider } from './contexts/ToastContext'
 import { ConfirmProvider } from './contexts/ConfirmContext'
 import ResetPassword from './pages/ResetPassword'
+import LegalPage from './pages/LegalPage'
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/terms" element={<LegalPage type="terms" />} />
+      <Route path="/privacy" element={<LegalPage type="privacy" />} />
 
       <Route path="/" element={<PrivateRoute><RoleRedirect /></PrivateRoute>} />
 
