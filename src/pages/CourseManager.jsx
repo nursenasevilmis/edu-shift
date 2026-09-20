@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import PageHeader from '../components/PageHeader'
 import PageCard from '../components/PageCard'
@@ -12,6 +12,9 @@ export default function CourseManager() {
   const [courseCode, setCourseCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const [editingId, setEditingId] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editCode, setEditCode] = useState('')
   const toast = useToast()
   const confirmDialog = useConfirm()
 
@@ -45,8 +48,48 @@ export default function CourseManager() {
     }
   }
 
+  function startEdit(c) {
+    setEditingId(c.id)
+    setEditName(c.course_name)
+    setEditCode(c.course_code || '')
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+  }
+
+  async function saveEdit(id) {
+    if (!editName.trim()) {
+      toast.warning('Ders adı boş olamaz.')
+      return
+    }
+    const { error } = await supabase
+      .from('courses')
+      .update({ course_name: editName, course_code: editCode })
+      .eq('id', id)
+
+    if (error) {
+      toast.error('Güncellenemedi: ' + error.message)
+    } else {
+      toast.success('Ders güncellendi.')
+      setEditingId(null)
+      fetchCourses()
+    }
+  }
+
   async function handleDelete(id) {
-    const ok = await confirmDialog('Bu dersi silmek istediğine emin misin? Bu işlem geri alınamaz.')
+    const { count } = await supabase
+      .from('course_assignments')
+      .select('id', { count: 'exact', head: true })
+      .eq('course_id', id)
+
+    const assignmentCount = count || 0
+    let message = 'Bu dersi silmek istediğine emin misin? Bu işlem geri alınamaz.'
+    if (assignmentCount > 0) {
+      message = 'Bu ders ' + assignmentCount + ' atamada kullanılıyor. Silersen o atamalar da (ve varsa programa yerleştirilmiş saatleri) birlikte silinecek. Devam edilsin mi?'
+    }
+
+    const ok = await confirmDialog({ title: 'Dersi sil', message, confirmLabel: 'Sil' })
     if (!ok) return
 
     const { error } = await supabase.from('courses').delete().eq('id', id)
@@ -105,25 +148,65 @@ export default function CourseManager() {
               {courses.map((c, i) => (
                 <tr key={c.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors duration-150">
                   <td className="py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <span className={'w-2 h-2 rounded-full shrink-0 ' + dotColors[i % dotColors.length]}></span>
-                      <div>
-                        <p className="font-medium text-slate-700">{c.course_name}</p>
-                        <p className="text-xs text-slate-400">{c.course_code || 'Kod girilmedi'}</p>
+                    {editingId === c.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={editCode}
+                          onChange={(e) => setEditCode(e.target.value)}
+                          placeholder="Kod"
+                          className="border border-slate-200 rounded-lg px-2 py-1 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          autoFocus
+                        />
+                        <input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="Ders adı"
+                          className="border border-slate-200 rounded-lg px-2 py-1 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-2.5">
+                        <span className={'w-2 h-2 rounded-full shrink-0 ' + dotColors[i % dotColors.length]}></span>
+                        <div>
+                          <p className="font-medium text-slate-700">{c.course_name}</p>
+                          <p className="text-xs text-slate-400">{c.course_code || 'Kod girilmedi'}</p>
+                        </div>
+                      </div>
+                    )}
                   </td>
                   <td className="py-3.5">
                     <div className="flex items-center justify-end gap-1">
-                      <button className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-colors duration-150">
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(c.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                      {editingId === c.id ? (
+                        <>
+                          <button
+                            onClick={() => saveEdit(c.id)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-emerald-500 hover:bg-emerald-50"
+                          >
+                            <Check size={15} />
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100"
+                          >
+                            <X size={15} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => startEdit(c)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-colors duration-150"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(c.id)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

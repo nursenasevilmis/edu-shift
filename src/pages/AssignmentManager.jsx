@@ -8,6 +8,7 @@ import { generateBlockPatterns } from '../utils/blockPatterns'
 import { useToast } from '../contexts/ToastContext'
 import { useConfirm } from '../contexts/ConfirmContext'
 
+
 const NEW_COURSE_VALUE = '__new__'
 
 export default function AssignmentManager() {
@@ -87,6 +88,24 @@ export default function AssignmentManager() {
         if (!teacherId || !weeklyHours || selectedBranchIds.size === 0) {
             toast.warning('Ogretmen, haftalik saat ve en az bir sube secmelisin.')
             return
+        }
+
+        // Bu ogretmenin mevcut toplam haftalik saatini kontrol et, asiri yuklenmeyi uyar
+        const { data: existingForTeacher } = await supabase
+            .from('course_assignments')
+            .select('weekly_hours')
+            .eq('teacher_id', teacherId)
+
+        const currentTotal = (existingForTeacher || []).reduce((sum, a) => sum + (a.weekly_hours || 0), 0)
+        const newTotal = currentTotal + Number(weeklyHours)
+
+        if (newTotal > 30) {
+            const proceed = await confirmDialog({
+                title: 'Öğretmen yükü uyarısı',
+                message: 'Bu öğretmenin toplam haftalık saati bu atamayla birlikte ' + newTotal + ' saate çıkacak. Bu normalin üzerinde bir yük. Yine de devam edilsin mi?',
+                confirmLabel: 'Devam Et',
+            })
+            if (!proceed) return
         }
 
         setLoading(true)

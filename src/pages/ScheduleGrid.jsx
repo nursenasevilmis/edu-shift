@@ -304,6 +304,28 @@ export default function ScheduleGrid() {
     fetchSchedule(selectedBranch)
   }
 
+
+  async function handleClearBranch() {
+    if (scheduleEntries.length === 0) {
+      toast.warning('Bu şubede zaten yerleştirilmiş ders yok.')
+      return
+    }
+
+    const ok = await confirmDialog({
+      title: 'Şubenin programını temizle',
+      message: 'Bu şubeye ait ' + scheduleEntries.length + ' ders saati programdan tamamen kaldırılacak. Devam edilsin mi?',
+      confirmLabel: 'Temizle',
+    })
+    if (!ok) return
+
+    const { error } = await supabase.from('schedules').delete().eq('branch_id', selectedBranch)
+    if (error) toast.error('Temizlenemedi: ' + error.message)
+    else {
+      toast.success('Program temizlendi.')
+      fetchSchedule(selectedBranch)
+    }
+  }
+
   async function handleClearSchedule() {
     if (!selectedBranch) return
 
@@ -364,14 +386,14 @@ export default function ScheduleGrid() {
             <Wand2 size={16} />
             Otomatik Oluştur
           </button>
-
           <button
-            onClick={handleClearSchedule}
-            disabled={!selectedBranch || scheduleEntries.length === 0}
-            className="flex items-center gap-2 bg-red-50 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed text-red-600 text-sm font-medium px-4 py-2.5 rounded-xl border border-red-100 transition-colors duration-150"
+            onClick={handleClearBranch}
+            className="flex items-center gap-2 bg-white border border-slate-200 hover:border-rose-200 hover:text-rose-500 text-slate-500 text-sm font-medium px-4 py-2.5 rounded-xl transition-colors duration-150"
           >
             Tümünü Temizle
           </button>
+
+        
 
         </div>
 

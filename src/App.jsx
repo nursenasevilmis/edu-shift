@@ -15,11 +15,13 @@ import TimeSettings from './pages/TimeSettings'
 import Dashboard from './pages/Dashboard'
 import { ToastProvider } from './contexts/ToastContext'
 import { ConfirmProvider } from './contexts/ConfirmContext'
+import ResetPassword from './pages/ResetPassword'
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route path="/" element={<PrivateRoute><RoleRedirect /></PrivateRoute>} />
 

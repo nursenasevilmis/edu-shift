@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import PageHeader from '../components/PageHeader'
 import PageCard from '../components/PageCard'
@@ -12,6 +12,9 @@ export default function BranchManager() {
   const [gradeLevel, setGradeLevel] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const [editingId, setEditingId] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editGrade, setEditGrade] = useState('')
   const toast = useToast()
   const confirmDialog = useConfirm()
 
@@ -45,8 +48,53 @@ export default function BranchManager() {
     }
   }
 
+  function startEdit(b) {
+    setEditingId(b.id)
+    setEditName(b.name)
+    setEditGrade(b.grade_level || '')
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+  }
+
+  async function saveEdit(id) {
+    if (!editName.trim()) {
+      toast.warning('Şube adı boş olamaz.')
+      return
+    }
+    const { error } = await supabase
+      .from('branches')
+      .update({ name: editName, grade_level: editGrade })
+      .eq('id', id)
+
+    if (error) {
+      toast.error('Güncellenemedi: ' + error.message)
+    } else {
+      toast.success('Şube güncellendi.')
+      setEditingId(null)
+      fetchBranches()
+    }
+  }
+
   async function handleDelete(id) {
-    const ok = await confirmDialog('Bu şubeyi silmek istediğine emin misin? Bu işlem geri alınamaz.')
+    // Silmeden önce, bu şubeye bağlı kaç kayıt etkileneceğini gösterelim
+    const [assignmentsRes, schedulesRes] = await Promise.all([
+      supabase.from('course_assignments').select('id', { count: 'exact', head: true }).eq('branch_id', id),
+      supabase.from('schedules').select('id', { count: 'exact', head: true }).eq('branch_id', id),
+    ])
+
+    const assignmentCount = assignmentsRes.count || 0
+    const scheduleCount = schedulesRes.count || 0
+
+    let message = 'Bu şubeyi silmek istediğine emin misin? Bu işlem geri alınamaz.'
+    if (assignmentCount > 0 || scheduleCount > 0) {
+      message =
+        'Bu şubeyi silersen, bağlı ' + assignmentCount + ' ders ataması ve ' + scheduleCount +
+        ' programa yerleştirilmiş ders saati de birlikte silinecek. Devam edilsin mi?'
+    }
+
+    const ok = await confirmDialog({ title: 'Şubeyi sil', message, confirmLabel: 'Sil' })
     if (!ok) return
 
     const { error } = await supabase.from('branches').delete().eq('id', id)
@@ -100,26 +148,64 @@ export default function BranchManager() {
                 key={b.id}
                 className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors duration-150"
               >
-                <div className={'w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ' + colors[i % colors.length]}>
-                  {b.name}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-800 text-sm truncate">{b.name}</p>
-                  <p className="text-xs text-slate-400">
-                    {b.grade_level ? b.grade_level + '. Sınıf Şubesi' : 'Seviye girilmedi'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-200 transition-colors duration-150">
-                    <Pencil size={13} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(b.id)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+                {editingId === b.id ? (
+                  <>
+                    <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                      <input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="border border-slate-200 rounded-lg px-2 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        autoFocus
+                      />
+                      <input
+                        value={editGrade}
+                        onChange={(e) => setEditGrade(e.target.value)}
+                        placeholder="Sınıf seviyesi"
+                        className="border border-slate-200 rounded-lg px-2 py-1 text-xs w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => saveEdit(b.id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-emerald-500 hover:bg-emerald-50"
+                      >
+                        <Check size={15} />
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-200"
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={'w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ' + colors[i % colors.length]}>
+                      {b.name}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-slate-800 text-sm truncate">{b.name}</p>
+                      <p className="text-xs text-slate-400">
+                        {b.grade_level ? b.grade_level + '. Sınıf Şubesi' : 'Seviye girilmedi'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => startEdit(b)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-200 transition-colors duration-150"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(b.id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>

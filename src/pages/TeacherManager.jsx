@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, User } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import SelectField from '../components/SelectField'
 import PageHeader from '../components/PageHeader'
@@ -14,6 +14,9 @@ export default function TeacherManager() {
   const [branchId, setBranchId] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const [editingId, setEditingId] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editBranchId, setEditBranchId] = useState('')
   const toast = useToast()
   const confirmDialog = useConfirm()
 
@@ -54,17 +57,56 @@ export default function TeacherManager() {
     }
   }
 
-  async function handleDelete(id) {
+  function startEdit(t) {
+    setEditingId(t.id)
+    setEditName(t.full_name)
+    setEditBranchId(t.branch_id ? String(t.branch_id) : '')
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+  }
+
+  async function saveEdit(id) {
+    if (!editName.trim()) {
+      toast.warning('Ad soyad boş olamaz.')
+      return
+    }
+    const { error } = await supabase
+      .from('teachers')
+      .update({ full_name: editName, branch_id: editBranchId || null })
+      .eq('id', id)
+
+    if (error) {
+      toast.error('Güncellenemedi: ' + error.message)
+    } else {
+      toast.success('Öğretmen güncellendi.')
+      setEditingId(null)
+      fetchTeachers()
+    }
+  }
+
+  async function handleDelete(id, name) {
+    const { count } = await supabase
+      .from('course_assignments')
+      .select('id', { count: 'exact', head: true })
+      .eq('teacher_id', id)
+
+    const assignmentCount = count || 0
+
+    if (assignmentCount > 0) {
+      toast.warning(
+        name + ' silinemedi çünkü ' + assignmentCount + ' ders atamasında kayıtlı. Önce Ders Atamaları sayfasından bu öğretmenin atamalarını kaldır.'
+      )
+      return
+    }
+
     const ok = await confirmDialog('Bu öğretmeni silmek istediğine emin misin? Bu işlem geri alınamaz.')
     if (!ok) return
 
     const { error } = await supabase.from('teachers').delete().eq('id', id)
     if (error) {
-      if (error.message.includes('foreign key constraint')) {
-        toast.warning('Bu öğretmen silinemedi çünkü ders atamalarında kayıtlı. Önce atamalarını kaldır.')
-      } else {
-        toast.error('Silinemedi: ' + error.message)
-      }
+      toast.error('Silinemedi: ' + error.message)
     } else {
       toast.success('Öğretmen silindi.')
       fetchTeachers()
@@ -120,26 +162,62 @@ export default function TeacherManager() {
           <div className="grid md:grid-cols-3 gap-3">
             {teachers.map((t, i) => (
               <div key={t.id} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors duration-150">
-                <div className={'w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 ' + colors[i % colors.length]}>
-                  {initialsOf(t.full_name)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-800 text-sm truncate">{t.full_name}</p>
-                  <p className="text-xs text-slate-400">
-                    {t.branches?.name ? t.branches.name + ' şubesi' : 'Şubeye bağlı değil'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-200 transition-colors duration-150">
-                    <Pencil size={13} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(t.id)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+                {editingId === t.id ? (
+                  <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                    <input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="border border-slate-200 rounded-lg px-2 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      autoFocus
+                    />
+                    <SelectField
+                      value={editBranchId}
+                      onChange={setEditBranchId}
+                      placeholder="Şube (opsiyonel)"
+                      options={branches.map((b) => ({ value: b.id, label: b.name }))}
+                    />
+                    <div className="flex items-center gap-1 justify-end">
+                      <button
+                        onClick={() => saveEdit(t.id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-emerald-500 hover:bg-emerald-100"
+                      >
+                        <Check size={15} />
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-200"
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className={'w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 ' + colors[i % colors.length]}>
+                      {initialsOf(t.full_name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-slate-800 text-sm truncate">{t.full_name}</p>
+                      <p className="text-xs text-slate-400">
+                        {t.branches?.name ? t.branches.name + ' şubesi' : 'Şubeye bağlı değil'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => startEdit(t)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-200 transition-colors duration-150"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(t.id, t.full_name)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors duration-150"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>

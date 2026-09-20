@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, BookOpen, Layers, ShieldCheck, AlertTriangle, CalendarClock, UserCheck } from 'lucide-react'
+import { Users, BookOpen, Layers, ShieldCheck, AlertTriangle, CalendarClock, UserCheck, Gauge } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 import PageHeader from '../components/PageHeader'
 import PageCard from '../components/PageCard'
 
+const MAX_HEALTHY_WEEKLY_HOURS = 30
+
 export default function Dashboard() {
   const { profile } = useAuth()
   const [stats, setStats] = useState({ teachers: 0, courses: 0, branches: 0, constraints: 0 })
   const [assignments, setAssignments] = useState([])
+  const [courses, setCourses] = useState([])
+  const [teachers, setTeachers] = useState([])
   const [scheduleCount, setScheduleCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
@@ -19,17 +23,22 @@ export default function Dashboard() {
 
   async function fetchAll() {
     const results = await Promise.all([
-      supabase.from('teachers').select('*', { count: 'exact', head: true }),
-      supabase.from('courses').select('*', { count: 'exact', head: true }),
+      supabase.from('teachers').select('id, full_name'),
+      supabase.from('courses').select('id, course_name'),
       supabase.from('branches').select('*', { count: 'exact', head: true }),
       supabase.from('teacher_constraints').select('*', { count: 'exact', head: true }),
-      supabase.from('course_assignments').select('id, weekly_hours'),
+      supabase.from('course_assignments').select('id, course_id, teacher_id, weekly_hours'),
       supabase.from('schedules').select('id', { count: 'exact', head: true }),
     ])
 
+    const teachersData = results[0].data || []
+    const coursesData = results[1].data || []
+
+    setTeachers(teachersData)
+    setCourses(coursesData)
     setStats({
-      teachers: results[0].count || 0,
-      courses: results[1].count || 0,
+      teachers: teachersData.length,
+      courses: coursesData.length,
       branches: results[2].count || 0,
       constraints: results[3].count || 0,
     })
@@ -45,19 +54,48 @@ export default function Dashboard() {
     : 0
   const remainingBlocks = Math.max(totalRequiredHours - scheduleCount, 0)
 
+  // Hangi dersler hiç öğretmene atanmamış (hiçbir şubede)?
+  const assignedCourseIds = new Set(assignments.map((a) => a.course_id))
+  const coursesWithoutTeacher = courses.filter((c) => !assignedCourseIds.has(c.id))
+
+  // Öğretmen başına toplam haftalık saat, aşırı yüklenme kontrolü
+  const hoursByTeacher = {}
+  assignments.forEach((a) => {
+    hoursByTeacher[a.teacher_id] = (hoursByTeacher[a.teacher_id] || 0) + (a.weekly_hours || 0)
+  })
+  const overloadedTeachers = teachers.filter((t) => (hoursByTeacher[t.id] || 0) > MAX_HEALTHY_WEEKLY_HOURS)
+
   const cards = [
     { label: 'Öğretmenler', value: stats.teachers, sub: 'Aktif öğretim kadrosu', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', badge: 'BU DÖNEM' },
     { label: 'Dersler', value: stats.courses, sub: 'Tanımlı ders sayısı', icon: BookOpen, color: 'text-violet-600', bg: 'bg-violet-50', badge: 'BU DÖNEM' },
-    { label: 'Şubeler', value: stats.branches, sub: '2 sınıf seviyesinde', icon: Layers, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'BU DÖNEM' },
+    { label: 'Şubeler', value: stats.branches, sub: 'Toplam şube', icon: Layers, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'BU DÖNEM' },
     { label: 'Sistem Durumu', value: 'Sağlıklı', sub: 'Kurallar çalışıyor', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', badge: 'CANLI', isText: true },
   ]
 
   const attentionItems = [
     remainingBlocks > 0
-      ? { icon: CalendarClock, title: remainingBlocks + ' blok yerleşmedi', sub: 'Program Oluşturucuyu kullanarak tamamla', tone: 'default', to: '/schedule' }
+      ? { icon: CalendarClock, title: remainingBlocks + ' blok yerleşmedi', sub: 'Program Oluşturucuyu kullanarak tamamla', tone: 'warn', to: '/schedule' }
       : { icon: ShieldCheck, title: 'Tüm bloklar yerleşti', sub: 'Program tamamlanmış görünüyor', tone: 'ok' },
-    { icon: UserCheck, title: 'Tüm derslerin öğretmeni var', sub: 'Eksik ders sahibi bulunmuyor', tone: 'ok' },
-    { icon: ShieldCheck, title: 'Çözülmemiş çakışma yok', sub: 'Öğretmen kısıtları ve çakışmalar temiz', tone: 'ok' },
+
+    coursesWithoutTeacher.length > 0
+      ? {
+          icon: UserCheck,
+          title: coursesWithoutTeacher.length + ' dersin öğretmeni yok',
+          sub: coursesWithoutTeacher.slice(0, 3).map((c) => c.course_name).join(', ') + (coursesWithoutTeacher.length > 3 ? '...' : ''),
+          tone: 'warn',
+          to: '/assignments',
+        }
+      : { icon: UserCheck, title: 'Tüm derslerin öğretmeni var', sub: 'Eksik ders sahibi bulunmuyor', tone: 'ok' },
+
+    overloadedTeachers.length > 0
+      ? {
+          icon: Gauge,
+          title: overloadedTeachers.length + ' öğretmen çok yüklü (>' + MAX_HEALTHY_WEEKLY_HOURS + ' saat)',
+          sub: overloadedTeachers.slice(0, 3).map((t) => t.full_name).join(', ') + (overloadedTeachers.length > 3 ? '...' : ''),
+          tone: 'warn',
+          to: '/assignments',
+        }
+      : { icon: Gauge, title: 'Öğretmen yükü dengeli', sub: 'Haftalık ' + MAX_HEALTHY_WEEKLY_HOURS + ' saati aşan öğretmen yok', tone: 'ok' },
   ]
 
   return (
@@ -132,20 +170,26 @@ export default function Dashboard() {
               </div>
               <div>
                 <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-slate-500">Öğretmen müsaitliği tanımlandı</span>
-                  <span className="font-medium text-slate-700">{stats.teachers} / {stats.teachers}</span>
+                  <span className="text-slate-500">Öğretmeni olmayan ders</span>
+                  <span className="font-medium text-slate-700">{coursesWithoutTeacher.length} / {courses.length}</span>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: '100%' }}></div>
+                  <div
+                    className={'h-full rounded-full ' + (coursesWithoutTeacher.length > 0 ? 'bg-amber-400' : 'bg-emerald-500')}
+                    style={{ width: courses.length > 0 ? (100 - (coursesWithoutTeacher.length / courses.length) * 100) + '%' : '100%' }}
+                  ></div>
                 </div>
               </div>
               <div>
                 <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-slate-500">Doğrulanan atamalar</span>
-                  <span className="font-medium text-slate-700">{assignments.length} kontrol edildi</span>
+                  <span className="text-slate-500">Yükü dengeli öğretmen</span>
+                  <span className="font-medium text-slate-700">{stats.teachers - overloadedTeachers.length} / {stats.teachers}</span>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-400 rounded-full" style={{ width: '100%' }}></div>
+                  <div
+                    className={'h-full rounded-full ' + (overloadedTeachers.length > 0 ? 'bg-rose-400' : 'bg-emerald-500')}
+                    style={{ width: stats.teachers > 0 ? (100 - (overloadedTeachers.length / stats.teachers) * 100) + '%' : '100%' }}
+                  ></div>
                 </div>
               </div>
             </div>
@@ -170,9 +214,9 @@ export default function Dashboard() {
                   <div className={'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ' + (isOk ? 'bg-white text-slate-400' : 'bg-white text-amber-500')}>
                     <Icon size={15} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-medium text-slate-700">{item.title}</p>
-                    <p className="text-xs text-slate-400">{item.sub}</p>
+                    <p className="text-xs text-slate-400 truncate">{item.sub}</p>
                   </div>
                 </div>
               )
