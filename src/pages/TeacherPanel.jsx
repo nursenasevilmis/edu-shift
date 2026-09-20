@@ -136,7 +136,7 @@ export default function TeacherPanel() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="flex justify-between items-center p-6 bg-[#f4f1e9] border-b border-slate-100">
+      <div className="flex justify-between items-center p-6 bg-white border-b border-slate-100">
         <div>
 
         </div>

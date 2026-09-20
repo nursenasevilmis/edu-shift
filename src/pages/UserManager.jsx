@@ -269,7 +269,7 @@ export default function UserManager() {
           YENİ HESAP OLUŞTUR
       ================================================== */}
 
-      <div className="bg-[#f4f1e9] rounded shadow-soft border border-slate-50 p-6 mb-6">
+      <div className="bg-white rounded-xl shadow-soft border border-slate-50 p-6 mb-6">
 
         <h2 className="font-semibold text-slate-700 mb-1">
           Yeni Hesap Oluştur
@@ -401,7 +401,7 @@ export default function UserManager() {
           ERİŞİM DİZİNİ
       ================================================== */}
 
-      <div className="bg-[#f4f1e9] rounded shadow-soft border border-slate-50 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-soft border border-slate-50 overflow-hidden">
 
         <div className="p-6 pb-4 flex items-center justify-between">
 

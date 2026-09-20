@@ -6,10 +6,10 @@ const ToastContext = createContext()
 
 const ICONS = { success: CheckCircle2, error: XCircle, warning: AlertTriangle, info: Info }
 const STYLES = {
-    success: 'bg-[#f4f1e9] border-emerald-100 text-emerald-600',
-    error: 'bg-[#f4f1e9] border-rose-100 text-rose-600',
-    warning: 'bg-[#f4f1e9] border-amber-100 text-amber-600',
-    info: 'bg-[#f4f1e9] border-blue-100 text-blue-600',
+    success: 'bg-white border-emerald-100 text-emerald-600',
+    error: 'bg-white border-rose-100 text-rose-600',
+    warning: 'bg-white border-amber-100 text-amber-600',
+    info: 'bg-white border-blue-100 text-blue-600',
 }
 
 export function ToastProvider({ children }) {

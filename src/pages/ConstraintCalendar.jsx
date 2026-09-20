@@ -157,7 +157,7 @@ export default function ConstraintCalendar() {
                                 'w-full h-11 rounded border text-xs font-medium transition-colors duration-150 ' +
                                 (isBlocked
                                   ? 'bg-amber-50 border-amber-100 text-amber-600 hover:bg-amber-100'
-                                  : 'bg-[#f4f1e9] border-slate-100 hover:border-slate-200 hover:bg-slate-50')
+                                  : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50')
                               }
                             >
                               {isBlocked ? 'Müsait Değil' : ''}

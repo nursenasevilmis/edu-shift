@@ -92,7 +92,7 @@ export default function TimeSettings() {
 
       <div className="grid md:grid-cols-3 gap-6">
         {/* Sol: gunun ritmi */}
-        <div className="md:col-span-2 bg-[#f4f1e9] rounded shadow-soft border border-slate-50 p-6">
+        <div className="md:col-span-2 bg-white rounded-xl shadow-soft border border-slate-50 p-6">
           <div className="flex items-center justify-between mb-1">
             <h2 className="font-semibold text-slate-700">Okul Günü Ritmi</h2>
             <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center">
@@ -158,7 +158,7 @@ export default function TimeSettings() {
         </div>
 
         {/* Sag: gunluk kapasite */}
-        <div className="bg-[#f4f1e9] rounded shadow-soft border border-slate-50 p-6">
+        <div className="bg-white rounded-xl shadow-soft border border-slate-50 p-6">
           <h2 className="font-semibold text-slate-700 mb-1">Günlük Kapasite</h2>
           <p className="text-xs text-slate-400 mb-5">Her okul günü için maksimum ders saati</p>
 

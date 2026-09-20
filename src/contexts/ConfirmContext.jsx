@@ -30,7 +30,7 @@ export function ConfirmProvider({ children }) {
             {state && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/40" onClick={() => handleClose(false)}></div>
-                    <div className="relative bg-[#f4f1e9] rounded shadow-xl max-w-sm w-full p-6 animate-toast-in">
+                    <div className="relative bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-toast-in">
                         <div className="w-11 h-11 rounded bg-amber-50 flex items-center justify-center text-amber-500 mb-4">
                             <AlertTriangle size={20} />
                         </div>

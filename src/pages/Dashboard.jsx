@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 import PageHeader from '../components/PageHeader'
-import { AlertTriangle, ArrowUpRight, CheckCircle2, CalendarClock } from '../components/UiMarks'
+import { AlertTriangle, ArrowUpRight, CheckCircle2, CalendarClock, Users, BookOpen, Layers, ShieldCheck } from '../components/UiMarks'
 
 const MAX_HEALTHY_WEEKLY_HOURS = 30
 const formatDate = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -57,23 +58,45 @@ export default function Dashboard() {
     { label: 'Ders ve öğretmen eşleşmesi', value: coursesWithoutTeacher.length === 0 ? 'Tamamlandı' : `${coursesWithoutTeacher.length} ders eksik`, detail: coursesWithoutTeacher.length ? coursesWithoutTeacher.slice(0, 2).map((course) => course.course_name).join(', ') : 'Tüm derslerin sorumlusu var', to: '/assignments', good: coursesWithoutTeacher.length === 0 },
     { label: 'Öğretmen haftalık yükü', value: overloadedTeachers.length === 0 ? 'Dengeli' : `${overloadedTeachers.length} kayıt incelenmeli`, detail: overloadedTeachers.length ? overloadedTeachers.slice(0, 2).map((teacher) => teacher.full_name).join(', ') : `Her öğretmen ${MAX_HEALTHY_WEEKLY_HOURS} saat altında`, to: '/assignments', good: overloadedTeachers.length === 0 },
   ]
+  const summary = [
+    { label: 'Öğretmen', value: stats.teachers, icon: Users, tone: 'blue' },
+    { label: 'Ders', value: stats.courses, icon: BookOpen, tone: 'lime' },
+    { label: 'Şube', value: stats.branches, icon: Layers, tone: 'coral' },
+    { label: 'Kısıt', value: stats.constraints, icon: ShieldCheck, tone: 'slate' },
+  ]
 
   return (
     <div className="page-canvas">
       <div className="page-width">
         <PageHeader title={`Merhaba, ${profile?.full_name?.split(' ')[0] || 'Müdür'}`} subtitle={`${formatDate.format(new Date())} · Haftalık programın yayınlama dosyası`} eyebrow="Çalışma alanı" />
 
-        <section className="dashboard-hero">
+        <motion.section className="dashboard-hero" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .45, ease: [.2, .8, .2, 1] }}>
           <div>
             <p className="section-kicker">Dosya durumu / yayın öncesi kontrol</p>
             <h2>{ready ? 'Program yayınlanmaya hazır.' : 'Yayın öncesi kontroller sürüyor.'}</h2>
-            <p className="dashboard-hero-copy">Bu ekran, okulun haftalık programını paylaşmadan önce müdürün görmesi gereken eksikleri tek sırada toplar. Her satır seni doğrudan ilgili düzeltmeye götürür.</p>
+            <p className="dashboard-hero-copy">Bu ekran okulun haftalık programını paylaşmadan önce müdürün görmesi gereken eksikleri tek sırada toplar. Her satır seni doğrudan ilgili düzeltmeye götürür.</p>
+            <div className="flex flex-wrap items-center gap-2 mt-6">
+              <Link to="/schedule" className="primary-button">Program dosyasını aç <ArrowUpRight size={16} /></Link>
+              <span className="inline-flex items-center gap-2 text-[11px] font-bold text-[var(--muted)]"><CalendarClock size={15} /> Haftalık görünüm</span>
+            </div>
           </div>
           <div className="dashboard-score">
             <p className="dashboard-score-value">{loading ? '—' : `${completion}%`}</p>
             <p className="dashboard-score-label">yerleşim tamamlandı</p>
             <p className="dashboard-score-label">{ready ? 'son kontrol bekliyor' : `${checks.filter((check) => !check.good).length} kontrol açık`}</p>
           </div>
+        </motion.section>
+
+        <section className="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-4">
+          {summary.map((item) => {
+            const Icon = item.icon
+            return (
+              <div key={item.label} className="surface p-4 flex items-center justify-between">
+                <div><p className="text-[11px] font-bold text-[var(--muted)]">{item.label}</p><p className="text-2xl font-extrabold tracking-tight text-[var(--ink)] mt-2">{loading ? '—' : item.value}</p></div>
+                <span className={'w-10 h-10 rounded-xl flex items-center justify-center bg-' + item.tone}><Icon size={18} /></span>
+              </div>
+            )
+          })}
         </section>
 
         <section className="checklist" aria-labelledby="checklist-title">
@@ -93,9 +116,9 @@ export default function Dashboard() {
 
         <div className="dashboard-lower">
           <section className="surface dashboard-panel">
-            <div className="dashboard-panel-head"><div><h2 className="dashboard-panel-title">Okul özeti</h2><p className="dashboard-panel-description">Sistemde kayıtlı operasyon verisi</p></div><CalendarClock size={18} color="var(--brand)" /></div>
+            <div className="dashboard-panel-head"><div><h2 className="dashboard-panel-title">Okul özeti</h2><p className="dashboard-panel-description">Sistemde kayıtlı operasyon verisi</p></div><CalendarClock size={18} color="var(--cobalt)" /></div>
             <dl className="dashboard-list">
-              {[["Öğretmen", stats.teachers], ["Ders", stats.courses], ["Şube", stats.branches], ["Müsaitlik kısıtı", stats.constraints]].map(([label, value]) => <div key={label} className="dashboard-list-row"><dt>{label}</dt><dd>{loading ? '—' : value}</dd></div>)}
+              {summary.map((item) => <div key={item.label} className="dashboard-list-row"><dt>{item.label}</dt><dd>{loading ? '—' : item.value}</dd></div>)}
             </dl>
           </section>
           <section className="surface dashboard-panel dashboard-next">

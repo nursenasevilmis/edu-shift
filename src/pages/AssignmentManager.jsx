@@ -265,7 +265,7 @@ export default function AssignmentManager() {
                                             'flex items-center gap-2 px-3 py-2 rounded border text-sm transition-colors duration-150 ' +
                                             (checked
                                                 ? 'bg-blue-50 border-blue-200 text-blue-700'
-                                                : 'bg-[#f4f1e9] border-slate-200 text-slate-600 hover:border-slate-300')
+                                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300')
                                         }
                                     >
                                         <span
