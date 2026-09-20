@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Plus, Pencil, Trash2, Check, X, Search } from '../components/UiMarks'
+import { useEffect, useState } from 'react'
+import { Plus, Pencil, Trash2, Check, X } from '../components/UiMarks'
 import { supabase } from '../supabaseClient'
 import PageHeader from '../components/PageHeader'
 import PageCard from '../components/PageCard'
@@ -8,7 +8,6 @@ import { useConfirm } from '../contexts/ConfirmContext'
 
 export default function CourseManager() {
   const [courses, setCourses] = useState([])
-  const [query, setQuery] = useState('')
   const [courseName, setCourseName] = useState('')
   const [courseCode, setCourseCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -102,21 +101,13 @@ export default function CourseManager() {
   }
 
   const dotColors = ['bg-[#1f5c4b]', 'bg-[#1f5c4b]', 'bg-[#a05d25]', 'bg-[#1f5c4b]', 'bg-[#a05d25]']
-  const filteredCourses = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase('tr')
-    if (!q) return courses
-    return courses.filter((c) =>
-      (c.course_name || '').toLocaleLowerCase('tr').includes(q) ||
-      (c.course_code || '').toLocaleLowerCase('tr').includes(q)
-    )
-  }, [courses, query])
 
   return (
     <div className="p-4 md:p-8">
       <PageHeader title="Dersler" subtitle="Okulda okutulan tüm dersleri buradan yönet" />
 
       <PageCard title="Dersler" description="Öğretmen ve blok atamaları Ders Atamaları sayfasından yapılır">
-        <form onSubmit={handleAdd} className="flex flex-wrap gap-3 mb-4">
+        <form onSubmit={handleAdd} className="flex gap-3 mb-6">
           <input
             placeholder="KOD (örn: MAT101)"
             value={courseCode}
@@ -127,7 +118,7 @@ export default function CourseManager() {
             placeholder="Ders adı (örn: Matematik)"
             value={courseName}
             onChange={(e) => setCourseName(e.target.value)}
-            className="flex-1 min-w-[160px] border border-slate-200 rounded px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 border border-slate-200 rounded px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <button
             type="submit"
@@ -138,18 +129,6 @@ export default function CourseManager() {
             Ekle
           </button>
         </form>
-
-        {courses.length > 0 && (
-          <div className="relative mb-5">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ders adı veya koduna göre ara..."
-              className="w-full border border-slate-200 rounded pl-9 pr-3 py-2 text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        )}
 
         {fetching ? (
           <div className="flex flex-col gap-2">
@@ -166,7 +145,7 @@ export default function CourseManager() {
               </tr>
             </thead>
             <tbody>
-              {filteredCourses.map((c, i) => (
+              {courses.map((c, i) => (
                 <tr key={c.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors duration-150">
                   <td className="py-3.5">
                     {editingId === c.id ? (
@@ -239,11 +218,6 @@ export default function CourseManager() {
         {!fetching && courses.length === 0 && (
           <div className="text-center py-12">
             <p className="text-slate-400 text-sm">Henüz ders eklenmedi</p>
-          </div>
-        )}
-        {!fetching && courses.length > 0 && filteredCourses.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-slate-400 text-sm">"{query}" ile eşleşen ders bulunamadı</p>
           </div>
         )}
       </PageCard>

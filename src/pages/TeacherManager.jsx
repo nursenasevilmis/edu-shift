@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, Pencil, Trash2, Check, X, Search } from '../components/UiMarks'
+=======
+import { useEffect, useState } from 'react'
+import { Plus, Pencil, Trash2, Check, X } from '../components/UiMarks'
+>>>>>>> 8c61b95cb7d9861b22360da409415bb8c3f8bd97
 import { supabase } from '../supabaseClient'
 import SelectField from '../components/SelectField'
 import PageHeader from '../components/PageHeader'
@@ -186,7 +191,11 @@ export default function TeacherManager() {
           </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-3">
+<<<<<<< HEAD
             {filteredTeachers.map((t, i) => (
+=======
+            {teachers.map((t, i) => (
+>>>>>>> 8c61b95cb7d9861b22360da409415bb8c3f8bd97
               <div key={t.id} className="flex items-center gap-3 p-4 rounded bg-slate-50 hover:bg-slate-100 transition-colors duration-150">
                 {editingId === t.id ? (
                   <div className="flex-1 flex flex-col gap-1.5 min-w-0">

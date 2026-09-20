@@ -60,8 +60,9 @@ export default function AdminLayout() {
       <div className={'sidebar-brand ' + (collapsed ? 'is-collapsed' : '')}>
         <button
           onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? 'Menüyü aç' : 'Menüyü daralt'}
           className="sidebar-toggle"
-          
+          aria-label={collapsed ? 'Menüyü aç' : 'Menüyü daralt'}
         >
           <span className="brand-chip">ES</span>
           {!collapsed && (
@@ -128,7 +129,9 @@ export default function AdminLayout() {
         </div>
       )}
       <main className="app-main">
-        
+        <header className="app-topbar">
+          <button onClick={() => setMobileOpen(true)} className="mobile-menu-button md:hidden" aria-label="Menüyü aç"><Menu /></button>
+        </header>
         <div className="flex-1 min-w-0 overflow-y-auto"><Outlet /></div>
       </main>
     </div>

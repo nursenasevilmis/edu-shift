@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Plus, Pencil, Trash2, Check, X, Search } from '../components/UiMarks'
+import { useEffect, useState } from 'react'
+import { Plus, Pencil, Trash2, Check, X } from '../components/UiMarks'
 import { supabase } from '../supabaseClient'
 import PageHeader from '../components/PageHeader'
 import PageCard from '../components/PageCard'
@@ -8,7 +8,6 @@ import { useConfirm } from '../contexts/ConfirmContext'
 
 export default function BranchManager() {
   const [branches, setBranches] = useState([])
-  const [query, setQuery] = useState('')
   const [name, setName] = useState('')
   const [gradeLevel, setGradeLevel] = useState('')
   const [loading, setLoading] = useState(false)
@@ -107,14 +106,6 @@ export default function BranchManager() {
   }
 
   const colors = ['bg-[#dce8df] text-[#1f5c4b]', 'bg-[#dce8df] text-[#1f5c4b]', 'bg-[#dce8df] text-[#1f5c4b]', 'bg-[#efe5d3] text-[#a05d25]']
-  const filteredBranches = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase('tr')
-    if (!q) return branches
-    return branches.filter((b) =>
-      (b.name || '').toLocaleLowerCase('tr').includes(q) ||
-      String(b.grade_level || '').toLocaleLowerCase('tr').includes(q)
-    )
-  }, [branches, query])
 
   return (
     <div className="p-4 md:p-8">
@@ -144,18 +135,6 @@ export default function BranchManager() {
           </button>
         </form>
 
-        {branches.length > 0 && (
-          <div className="relative mb-5">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Şube adı veya sınıf seviyesine göre ara..."
-              className="w-full border border-slate-200 rounded pl-9 pr-3 py-2 text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        )}
-
         {fetching ? (
           <div className="grid md:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
@@ -164,7 +143,7 @@ export default function BranchManager() {
           </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-3">
-            {filteredBranches.map((b, i) => (
+            {branches.map((b, i) => (
               <div
                 key={b.id}
                 className="flex items-center gap-3 p-4 rounded bg-slate-50 hover:bg-slate-100 transition-colors duration-150"
@@ -235,11 +214,6 @@ export default function BranchManager() {
         {!fetching && branches.length === 0 && (
           <div className="text-center py-12">
             <p className="text-slate-400 text-sm">Henüz şube eklenmedi</p>
-          </div>
-        )}
-        {!fetching && branches.length > 0 && filteredBranches.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-slate-400 text-sm">"{query}" ile eşleşen şube bulunamadı</p>
           </div>
         )}
       </PageCard>
