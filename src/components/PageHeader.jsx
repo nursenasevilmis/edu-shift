@@ -1,6 +1,12 @@
-export default function PageHeader({ title, subtitle, action, eyebrow }) {
-  return <div className="flex items-end justify-between gap-4 mb-8 flex-wrap border-b border-[#cbcfc8] pb-5">
-    <div>{eyebrow && <p className="text-[10px] uppercase tracking-[.16em] text-[#68726b] font-mono mb-2">{eyebrow}</p>}<h1 className="text-[28px] md:text-[34px] font-semibold text-[#202822] leading-tight">{title}</h1>{subtitle && <p className="text-[#68726b] text-sm mt-2 max-w-2xl leading-relaxed">{subtitle}</p>}</div>
-    {action && <div>{action}</div>}
-  </div>
+export default function PageHeader({ title, subtitle, action, eyebrow = 'Okul operasyonu' }) {
+  return (
+    <header className="flex items-end justify-between gap-5 mb-7 flex-wrap border-b border-[var(--line)] pb-5">
+      <div>
+        {eyebrow && <p className="section-kicker mb-2">{eyebrow}</p>}
+        <h1 className="text-[30px] md:text-[38px] font-semibold text-[var(--ink)] leading-[.98]">{title}</h1>
+        {subtitle && <p className="text-[var(--muted)] text-sm mt-3 max-w-2xl leading-relaxed">{subtitle}</p>}
+      </div>
+      {action && <div>{action}</div>}
+    </header>
+  )
 }

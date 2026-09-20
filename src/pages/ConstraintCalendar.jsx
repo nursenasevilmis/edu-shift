@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { DAYS } from '../utils/timeUtils'
 import SelectField from '../components/SelectField'
@@ -15,43 +15,46 @@ export default function ConstraintCalendar() {
   const [fetching, setFetching] = useState(true)
   const toast = useToast()
 
-  useEffect(() => {
-    fetchTeachers()
-    fetchTimeSlots()
-  }, [])
-
-  useEffect(() => {
-    if (selectedTeacher) fetchConstraints(selectedTeacher)
-    else setSelectedCells(new Set())
-  }, [selectedTeacher])
-
-  async function fetchTeachers() {
+  const fetchTeachers = useCallback(async () => {
     const { data, error } = await supabase.from('teachers').select('*').order('id')
     if (error) console.error(error)
     else {
       setTeachers(data)
       if (data.length > 0) setSelectedTeacher(String(data[0].id))
     }
-  }
+  }, [])
 
-  async function fetchTimeSlots() {
+  const fetchTimeSlots = useCallback(async () => {
     setFetching(true)
     const { data, error } = await supabase.from('time_slots').select('*').order('day_of_week').order('period_number')
     if (error) console.error(error)
     else setTimeSlots(data)
     setFetching(false)
-  }
+  }, [])
 
-  async function fetchConstraints(teacherId) {
+  const fetchConstraints = useCallback(async (teacherId) => {
     const { data, error } = await supabase.from('teacher_constraints').select('*').eq('teacher_id', teacherId)
     if (error) {
       console.error(error)
       return
     }
     const cells = new Set()
-    data.forEach((c) => cells.add(c.day_of_week + '|' + c.start_time.slice(0, 5)))
+    data.forEach((constraint) => cells.add(constraint.day_of_week + '|' + constraint.start_time.slice(0, 5)))
     setSelectedCells(cells)
-  }
+  }, [])
+
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      fetchTeachers()
+      fetchTimeSlots()
+    })
+  }, [fetchTeachers, fetchTimeSlots])
+
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      if (selectedTeacher) fetchConstraints(selectedTeacher)
+    })
+  }, [selectedTeacher, fetchConstraints])
 
   const maxPeriods = Math.max(1, ...DAYS.map((d) => timeSlots.filter((s) => s.day_of_week === d.value).length))
 

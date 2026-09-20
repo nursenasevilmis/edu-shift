@@ -34,10 +34,6 @@ export default function AssignmentManager() {
         fetchAll()
     }, [])
 
-    useEffect(() => {
-        setBlockPattern('')
-    }, [weeklyHours])
-
     async function fetchAll() {
         setFetching(true)
         const results = await Promise.all([
@@ -228,7 +224,10 @@ export default function AssignmentManager() {
                                 type="number"
                                 placeholder="orn: 5"
                                 value={weeklyHours}
-                                onChange={(e) => setWeeklyHours(e.target.value)}
+                                onChange={(e) => {
+                                    setWeeklyHours(e.target.value)
+                                    setBlockPattern('')
+                                }}
                                 className="w-24"
                             />
                         </div>

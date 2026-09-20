@@ -5,15 +5,139 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useToast } from '../contexts/ToastContext'
 
+function BrandLockup({ dark = false }) {
+  return (
+    <div className={'brand-lockup ' + (dark ? 'text-[#17241f]' : '')}>
+      <span className="brand-chip">ES</span>
+      <span>
+        <span className="brand-name">EduShift</span>
+        <span className="brand-subtitle">School ops</span>
+      </span>
+    </div>
+  )
+}
+
+function SchedulePreview() {
+  return (
+    <div className="auth-board" aria-label="Haftalık program önizlemesi">
+      <div className="auth-board-top"><span>Program dosyası / 2026</span><span>Hazır</span></div>
+      <div className="auth-board-row">
+        <span className="auth-board-label">09:00</span><span className="is-active">MAT</span><span>FEN</span><span className="is-accent">TÜRK</span><span>İNG</span><span>GÖR</span>
+      </div>
+      <div className="auth-board-row">
+        <span className="auth-board-label">10:00</span><span>FEN</span><span className="is-active">MAT</span><span>BED</span><span className="is-active">TÜRK</span><span>İNG</span>
+      </div>
+      <div className="auth-board-row">
+        <span className="auth-board-label">11:00</span><span>İNG</span><span className="is-accent">TÜRK</span><span>MAT</span><span>FEN</span><span className="is-active">GÖR</span>
+      </div>
+      <div className="auth-board-row">
+        <span className="auth-board-label">12:00</span><span className="is-active">BED</span><span>FEN</span><span>MAT</span><span>İNG</span><span>TÜRK</span>
+      </div>
+    </div>
+  )
+}
+
 export default function Login() {
-  const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const [mode, setMode] = useState('login'); const [resetLoading, setResetLoading] = useState(false)
-  const { signIn } = useAuth(); const navigate = useNavigate(); const toast = useToast()
-  async function handleSubmit(e) { e.preventDefault(); setError(''); setLoading(true); const { error: signInError } = await signIn(email, password); setLoading(false); if (signInError) setError('Email veya şifre hatalı.'); else navigate('/') }
-  async function handleForgotPassword(e) { e.preventDefault(); if (!email.trim()) { toast.warning('Önce email adresini gir.'); return }; setResetLoading(true); const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/reset-password' }); setResetLoading(false); if (resetError) toast.error('Bir hata oluştu: ' + resetError.message); else { toast.success('Şifre sıfırlama linki email adresine gönderildi.'); setMode('login') } }
-  return <div className="min-h-screen bg-[#e9e6de] grid lg:grid-cols-[.85fr_1.15fr]">
-    <section className="bg-[#202822] text-[#f4f1e9] p-7 sm:p-12 lg:p-16 flex flex-col justify-between min-h-[280px] lg:min-h-screen"><div><p className="font-semibold text-lg">EduShift</p><p className="font-mono text-[10px] tracking-[.16em] text-[#a8b6aa] mt-1">SCHOOL OPS</p></div><div className="max-w-md my-10 lg:my-0"><p className="font-mono text-[11px] uppercase tracking-[.14em] text-[#a8b6aa] mb-4">Haftalık program dosyası</p><h1 className="text-4xl lg:text-5xl font-semibold leading-[1.05]">Pazartesi sabahı için tek kayıt.</h1><p className="text-[#c2ccc3] text-sm leading-relaxed mt-6 max-w-sm">Şube, ders, öğretmen ve zaman kısıtlarını aynı dosyada tut. Çakışmaları kontrol et, programı paylaş.</p></div><p className="font-mono text-[10px] text-[#a8b6aa]">20 Eylül 2026 · Yetkili okul personeli</p></section>
-    <section className="flex items-center justify-center p-6 sm:p-12"><div className="w-full max-w-[430px] bg-[#f4f1e9] border border-[#cbcfc8] rounded p-7 sm:p-10"><p className="font-mono text-[10px] uppercase tracking-[.14em] text-[#68726b] mb-3">Yetkili erişim</p><h2 className="text-3xl font-semibold text-[#202822]">{mode === 'login' ? 'Giriş yap' : 'Şifreyi yenile'}</h2><p className="text-[#68726b] text-sm mt-2 mb-8">{mode === 'login' ? 'Okulun haftalık program dosyasını aç.' : 'Email adresine bir yenileme bağlantısı göndereceğiz.'}</p>
-      {mode === 'login' ? <form onSubmit={handleSubmit} className="space-y-5"><div className="space-y-2"><label className="text-xs font-semibold text-[#202822]">Email adresi</label><Input type="email" placeholder="müdür@okul.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="!rounded" /></div><div className="space-y-2"><div className="flex justify-between items-center"><label className="text-xs font-semibold text-[#202822]">Şifre</label><button type="button" onClick={() => setMode('forgot')} className="text-xs text-[#1f5c4b] underline underline-offset-2">Şifremi unuttum</button></div><Input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="!rounded" /></div>{error && <p className="text-[#8b4225] text-xs border border-[#c99a84] bg-[#f1dfd5] rounded px-3 py-2.5">{error}</p>}<button type="submit" disabled={loading} className="w-full bg-[#1f5c4b] hover:bg-[#174839] disabled:opacity-60 text-[#f4f1e9] font-semibold rounded py-3 transition-colors">{loading ? 'Giriş yapılıyor...' : 'Giriş yap'}</button></form> : <form onSubmit={handleForgotPassword} className="space-y-5"><div className="space-y-2"><label className="text-xs font-semibold text-[#202822]">Email adresi</label><Input type="email" placeholder="müdür@okul.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="!rounded" /></div><button type="submit" disabled={resetLoading} className="w-full bg-[#1f5c4b] text-[#f4f1e9] font-semibold rounded py-3 disabled:opacity-60">{resetLoading ? 'Gönderiliyor...' : 'Yenileme bağlantısı gönder'}</button><button type="button" onClick={() => setMode('login')} className="w-full text-xs text-[#68726b] underline underline-offset-2">Girişe geri dön</button></form>}
-      <div className="mt-8 pt-4 border-t border-[#cbcfc8] flex gap-4 text-xs text-[#68726b]"><a href="/terms" className="underline underline-offset-2">Kullanım şartları</a><a href="/privacy" className="underline underline-offset-2">Gizlilik</a></div></div></section>
-  </div>
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [mode, setMode] = useState('login')
+  const [resetLoading, setResetLoading] = useState(false)
+  const { signIn } = useAuth()
+  const navigate = useNavigate()
+  const toast = useToast()
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    const { error: signInError } = await signIn(email, password)
+    setLoading(false)
+    if (signInError) setError('Email veya şifre hatalı. Bilgilerini kontrol edip tekrar dene.')
+    else navigate('/')
+  }
+
+  async function handleForgotPassword(e) {
+    e.preventDefault()
+    if (!email.trim()) {
+      toast.warning('Önce email adresini gir.')
+      return
+    }
+    setResetLoading(true)
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/reset-password' })
+    setResetLoading(false)
+    if (resetError) toast.error('Bir hata oluştu: ' + resetError.message)
+    else {
+      toast.success('Şifre sıfırlama bağlantısı email adresine gönderildi.')
+      setMode('login')
+    }
+  }
+
+  return (
+    <main className="auth-shell">
+      <section className="auth-side">
+        <div className="auth-topline">
+          <BrandLockup />
+          <span className="auth-meta">20 Eylül 2026<br />Yetkili erişim</span>
+        </div>
+
+        <div className="auth-story">
+          <p className="auth-overline">Haftalık program dosyası</p>
+          <h1>Okulun haftası, tek bir netlikte.</h1>
+          <p className="auth-story-copy">Şube, ders, öğretmen ve zaman kısıtlarını aynı çalışma alanında toparla. Çakışmaları gör, boşlukları tamamla, programı güvenle paylaş.</p>
+          <div className="auth-workflow" aria-label="EduShift çalışma akışı">
+            <div className="auth-step"><span className="auth-step-number">01</span><span>Kayıtları topla</span></div>
+            <span className="auth-step-line" />
+            <div className="auth-step"><span className="auth-step-number">02</span><span>Kontrol et</span></div>
+            <span className="auth-step-line" />
+            <div className="auth-step"><span className="auth-step-number">03</span><span>Yayınla</span></div>
+          </div>
+        </div>
+
+        <SchedulePreview />
+        <div className="auth-footer"><span>EduShift / School operations</span><span>v1.0</span></div>
+      </section>
+
+      <section className="auth-panel">
+        <div className="auth-panel-inner">
+          <div className="auth-mobile-brand"><BrandLockup dark /></div>
+          <div className="auth-heading">
+            <p className="section-kicker">Çalışma alanına giriş</p>
+            <h2>{mode === 'login' ? 'Tekrar hoş geldin.' : 'Şifreni yenile.'}</h2>
+            <p>{mode === 'login' ? 'Okulunun haftalık program dosyasını kaldığın yerden aç.' : 'Email adresine güvenli bir yenileme bağlantısı göndereceğiz.'}</p>
+          </div>
+
+          {mode === 'login' ? (
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="auth-field">
+                <label htmlFor="login-email" className="auth-label">Email adresi</label>
+                <Input id="login-email" type="email" placeholder="müdür@okul.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="auth-input" />
+              </div>
+              <div className="auth-field">
+                <div className="auth-field-head">
+                  <label htmlFor="login-password" className="auth-label">Şifre</label>
+                  <button type="button" onClick={() => setMode('forgot')} className="auth-link">Şifremi unuttum</button>
+                </div>
+                <Input id="login-password" type="password" placeholder="Şifreni gir" value={password} onChange={(e) => setPassword(e.target.value)} required className="auth-input" />
+              </div>
+              {error && <p className="auth-alert" role="alert">{error}</p>}
+              <button type="submit" disabled={loading} className="primary-button auth-submit">{loading ? 'Giriş yapılıyor...' : 'Çalışma alanını aç'}</button>
+            </form>
+          ) : (
+            <form onSubmit={handleForgotPassword} className="auth-form">
+              <div className="auth-field">
+                <label htmlFor="reset-email" className="auth-label">Email adresi</label>
+                <Input id="reset-email" type="email" placeholder="müdür@okul.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="auth-input" />
+              </div>
+              <button type="submit" disabled={resetLoading} className="primary-button auth-submit">{resetLoading ? 'Gönderiliyor...' : 'Yenileme bağlantısı gönder'}</button>
+              <button type="button" onClick={() => setMode('login')} className="auth-back">Girişe geri dön</button>
+            </form>
+          )}
+
+          <div className="auth-legal"><a href="/terms">Kullanım şartları</a><a href="/privacy">Gizlilik</a><span>Yalnızca yetkili okul personeli</span></div>
+        </div>
+      </section>
+    </main>
+  )
 }

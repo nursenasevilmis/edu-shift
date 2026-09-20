@@ -1,49 +1,81 @@
-const labels = {
-  LayoutGrid: 'OV', CalendarClock: 'PL', Layers: 'ŞB', BookOpen: 'DR', Users: 'ÖĞ', CalendarX: 'KS',
-  ClipboardList: 'AT', SlidersHorizontal: 'ZA', ShieldCheck: 'OK', BookMarked: 'ES', Menu: 'MN', X: '×',
-  ChevronRight: '›', Sparkles: '!', LogOut: 'ÇK', CircleHelp: '?', ArrowUpRight: '↗', Wand2: 'OTO',
-  CalendarDays: 'HF', Trash2: 'SİL', Info: 'i', ArrowRight: '→', CheckCircle2: 'OK', Circle: '•',
-  AlertTriangle: '!', UserCheck: 'ÖĞ', Gauge: 'YÜK', LockKeyhole: 'KİL', Plus: '+', Pencil: 'DÜZ',
-  Check: 'OK', Download: 'PDF', Clock: 'SA', Book: 'DR', XCircle: 'X', ChevronDown: '⌄',
+import {
+  LayoutGrid as LayoutGridIcon,
+  CalendarClock as CalendarClockIcon,
+  Layers as LayersIcon,
+  BookOpen as BookOpenIcon,
+  Users as UsersIcon,
+  CalendarX as CalendarXIcon,
+  ClipboardList as ClipboardListIcon,
+  SlidersHorizontal as SlidersHorizontalIcon,
+  ShieldCheck as ShieldCheckIcon,
+  BookMarked as BookMarkedIcon,
+  Menu as MenuIcon,
+  X as XIcon,
+  ChevronRight as ChevronRightIcon,
+  Sparkles as SparklesIcon,
+  LogOut as LogOutIcon,
+  CircleHelp as CircleHelpIcon,
+  ArrowUpRight as ArrowUpRightIcon,
+  Wand2 as Wand2Icon,
+  CalendarDays as CalendarDaysIcon,
+  Trash2 as Trash2Icon,
+  Info as InfoIcon,
+  ArrowRight as ArrowRightIcon,
+  CheckCircle2 as CheckCircle2Icon,
+  Circle as CircleIcon,
+  AlertTriangle as AlertTriangleIcon,
+  UserCheck as UserCheckIcon,
+  Gauge as GaugeIcon,
+  LockKeyhole as LockKeyholeIcon,
+  Plus as PlusIcon,
+  Pencil as PencilIcon,
+  Check as CheckIcon,
+  Download as DownloadIcon,
+  Clock as ClockIcon,
+  Book as BookIcon,
+  XCircle as XCircleIcon,
+  ChevronDown as ChevronDownIcon,
+} from 'lucide-react'
+
+function createIcon(Icon) {
+  return function UiIcon({ size = 16, strokeWidth = 1.8, ...props }) {
+    return <Icon size={size} strokeWidth={strokeWidth} {...props} />
+  }
 }
 
-export function UiMark({ name, className = '' }) {
-  return <span aria-hidden="true" className={'ui-mark ' + className} data-mark={labels[name] || name}>{labels[name] || name}</span>
-}
-
-export const LayoutGrid = (props) => <UiMark name="LayoutGrid" {...props} />
-export const CalendarClock = (props) => <UiMark name="CalendarClock" {...props} />
-export const Layers = (props) => <UiMark name="Layers" {...props} />
-export const BookOpen = (props) => <UiMark name="BookOpen" {...props} />
-export const Users = (props) => <UiMark name="Users" {...props} />
-export const CalendarX = (props) => <UiMark name="CalendarX" {...props} />
-export const ClipboardList = (props) => <UiMark name="ClipboardList" {...props} />
-export const SlidersHorizontal = (props) => <UiMark name="SlidersHorizontal" {...props} />
-export const ShieldCheck = (props) => <UiMark name="ShieldCheck" {...props} />
-export const BookMarked = (props) => <UiMark name="BookMarked" {...props} />
-export const Menu = (props) => <UiMark name="Menu" {...props} />
-export const X = (props) => <UiMark name="X" {...props} />
-export const ChevronRight = (props) => <UiMark name="ChevronRight" {...props} />
-export const Sparkles = (props) => <UiMark name="Sparkles" {...props} />
-export const LogOut = (props) => <UiMark name="LogOut" {...props} />
-export const CircleHelp = (props) => <UiMark name="CircleHelp" {...props} />
-export const ArrowUpRight = (props) => <UiMark name="ArrowUpRight" {...props} />
-export const Wand2 = (props) => <UiMark name="Wand2" {...props} />
-export const CalendarDays = (props) => <UiMark name="CalendarDays" {...props} />
-export const Trash2 = (props) => <UiMark name="Trash2" {...props} />
-export const Info = (props) => <UiMark name="Info" {...props} />
-export const ArrowRight = (props) => <UiMark name="ArrowRight" {...props} />
-export const CheckCircle2 = (props) => <UiMark name="CheckCircle2" {...props} />
-export const Circle = (props) => <UiMark name="Circle" {...props} />
-export const AlertTriangle = (props) => <UiMark name="AlertTriangle" {...props} />
-export const UserCheck = (props) => <UiMark name="UserCheck" {...props} />
-export const Gauge = (props) => <UiMark name="Gauge" {...props} />
-export const LockKeyhole = (props) => <UiMark name="LockKeyhole" {...props} />
-export const Plus = (props) => <UiMark name="Plus" {...props} />
-export const Pencil = (props) => <UiMark name="Pencil" {...props} />
-export const Check = (props) => <UiMark name="Check" {...props} />
-export const Download = (props) => <UiMark name="Download" {...props} />
-export const Clock = (props) => <UiMark name="Clock" {...props} />
-export const Book = (props) => <UiMark name="Book" {...props} />
-export const XCircle = (props) => <UiMark name="XCircle" {...props} />
-export const ChevronDown = (props) => <UiMark name="ChevronDown" {...props} />
+export const LayoutGrid = createIcon(LayoutGridIcon)
+export const CalendarClock = createIcon(CalendarClockIcon)
+export const Layers = createIcon(LayersIcon)
+export const BookOpen = createIcon(BookOpenIcon)
+export const Users = createIcon(UsersIcon)
+export const CalendarX = createIcon(CalendarXIcon)
+export const ClipboardList = createIcon(ClipboardListIcon)
+export const SlidersHorizontal = createIcon(SlidersHorizontalIcon)
+export const ShieldCheck = createIcon(ShieldCheckIcon)
+export const BookMarked = createIcon(BookMarkedIcon)
+export const Menu = createIcon(MenuIcon)
+export const X = createIcon(XIcon)
+export const ChevronRight = createIcon(ChevronRightIcon)
+export const Sparkles = createIcon(SparklesIcon)
+export const LogOut = createIcon(LogOutIcon)
+export const CircleHelp = createIcon(CircleHelpIcon)
+export const ArrowUpRight = createIcon(ArrowUpRightIcon)
+export const Wand2 = createIcon(Wand2Icon)
+export const CalendarDays = createIcon(CalendarDaysIcon)
+export const Trash2 = createIcon(Trash2Icon)
+export const Info = createIcon(InfoIcon)
+export const ArrowRight = createIcon(ArrowRightIcon)
+export const CheckCircle2 = createIcon(CheckCircle2Icon)
+export const Circle = createIcon(CircleIcon)
+export const AlertTriangle = createIcon(AlertTriangleIcon)
+export const UserCheck = createIcon(UserCheckIcon)
+export const Gauge = createIcon(GaugeIcon)
+export const LockKeyhole = createIcon(LockKeyholeIcon)
+export const Plus = createIcon(PlusIcon)
+export const Pencil = createIcon(PencilIcon)
+export const Check = createIcon(CheckIcon)
+export const Download = createIcon(DownloadIcon)
+export const Clock = createIcon(ClockIcon)
+export const Book = createIcon(BookIcon)
+export const XCircle = createIcon(XCircleIcon)
+export const ChevronDown = createIcon(ChevronDownIcon)

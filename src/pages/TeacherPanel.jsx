@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { Card, Button } from '@heroui/react'
 import { Download } from '../components/UiMarks'
 import { useAuth } from '../contexts/AuthContext'
@@ -7,7 +7,7 @@ import { DAYS } from '../utils/timeUtils'
 import { useToast } from '../contexts/ToastContext'
 
 export default function TeacherPanel() {
-  const { profile, signOut, user } = useAuth()
+  const { signOut, user } = useAuth()
   const [teacherRecord, setTeacherRecord] = useState(null)
   const [scheduleEntries, setScheduleEntries] = useState([])
   const [timeSlots, setTimeSlots] = useState([])
@@ -16,11 +16,8 @@ export default function TeacherPanel() {
   const tableRef = useRef(null)
   const toast = useToast()
 
-  useEffect(() => {
-    if (user) fetchTeacherAndSchedule()
-  }, [user])
-
-  async function fetchTeacherAndSchedule() {
+  const fetchTeacherAndSchedule = useCallback(async () => {
+    if (!user) return
     setLoading(true)
 
     const { data: teacher, error: teacherError } = await supabase
@@ -53,7 +50,11 @@ export default function TeacherPanel() {
     else setScheduleEntries(entries)
 
     setLoading(false)
-  }
+  }, [user])
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchTeacherAndSchedule)
+  }, [fetchTeacherAndSchedule])
 
   const maxPeriods = Math.max(
     1,

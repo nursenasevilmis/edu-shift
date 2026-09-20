@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button, Input } from '@heroui/react'
 import { Clock } from '../components/UiMarks'
 import { supabase } from '../supabaseClient'
@@ -14,17 +14,17 @@ export default function TimeSettings() {
   const toast = useToast()
   const confirmDialog = useConfirm()
 
-  useEffect(() => {
-    fetchSettings()
-  }, [])
-
-  async function fetchSettings() {
+  const fetchSettings = useCallback(async () => {
     setFetching(true)
     const { data, error } = await supabase.from('time_settings').select('*').eq('id', 1).single()
     if (error) console.error(error)
     else setSettings(data)
     setFetching(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchSettings)
+  }, [fetchSettings])
 
   function updateField(field, value) {
     setSettings((prev) => ({ ...prev, [field]: value }))

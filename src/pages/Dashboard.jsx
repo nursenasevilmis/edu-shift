@@ -1,24 +1,111 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 import PageHeader from '../components/PageHeader'
-import PageCard from '../components/PageCard'
+import { AlertTriangle, ArrowUpRight, CheckCircle2, CalendarClock } from '../components/UiMarks'
 
 const MAX_HEALTHY_WEEKLY_HOURS = 30
 const formatDate = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
 
 export default function Dashboard() {
-  const { profile } = useAuth(); const [stats, setStats] = useState({ teachers: 0, courses: 0, branches: 0, constraints: 0 }); const [assignments, setAssignments] = useState([]); const [courses, setCourses] = useState([]); const [teachers, setTeachers] = useState([]); const [scheduleCount, setScheduleCount] = useState(0); const [loading, setLoading] = useState(true)
-  useEffect(() => { fetchAll() }, [])
-  async function fetchAll() { const results = await Promise.all([supabase.from('teachers').select('id, full_name'), supabase.from('courses').select('id, course_name'), supabase.from('branches').select('*', { count: 'exact', head: true }), supabase.from('teacher_constraints').select('*', { count: 'exact', head: true }), supabase.from('course_assignments').select('id, course_id, teacher_id, weekly_hours'), supabase.from('schedules').select('id', { count: 'exact', head: true })]); const teacherData = results[0].data || []; const courseData = results[1].data || []; setTeachers(teacherData); setCourses(courseData); setStats({ teachers: teacherData.length, courses: courseData.length, branches: results[2].count || 0, constraints: results[3].count || 0 }); setAssignments(results[4].data || []); setScheduleCount(results[5].count || 0); setLoading(false) }
-  const totalRequiredHours = assignments.reduce((sum, a) => sum + (a.weekly_hours || 0), 0); const placed = Math.min(scheduleCount, totalRequiredHours); const remaining = Math.max(totalRequiredHours - scheduleCount, 0); const assignedCourseIds = new Set(assignments.map((a) => a.course_id)); const coursesWithoutTeacher = courses.filter((c) => !assignedCourseIds.has(c.id)); const hoursByTeacher = {}; assignments.forEach((a) => { hoursByTeacher[a.teacher_id] = (hoursByTeacher[a.teacher_id] || 0) + (a.weekly_hours || 0) }); const overloadedTeachers = teachers.filter((t) => (hoursByTeacher[t.id] || 0) > MAX_HEALTHY_WEEKLY_HOURS); const ready = remaining === 0 && coursesWithoutTeacher.length === 0 && overloadedTeachers.length === 0
-  const checks = [{ label: 'Ders saatleri yerleşimi', value: remaining === 0 ? 'Tamamlandı' : `${remaining} saat eksik`, detail: `${placed} / ${totalRequiredHours || 0} saat`, to: '/schedule', good: remaining === 0 }, { label: 'Ders ve öğretmen eşleşmesi', value: coursesWithoutTeacher.length === 0 ? 'Tamamlandı' : `${coursesWithoutTeacher.length} ders eksik`, detail: coursesWithoutTeacher.length ? coursesWithoutTeacher.slice(0, 2).map((c) => c.course_name).join(', ') : 'Tüm derslerin sorumlusu var', to: '/assignments', good: coursesWithoutTeacher.length === 0 }, { label: 'Öğretmen haftalık yükü', value: overloadedTeachers.length === 0 ? 'Dengeli' : `${overloadedTeachers.length} kayıt incelenmeli`, detail: overloadedTeachers.length ? overloadedTeachers.slice(0, 2).map((t) => t.full_name).join(', ') : `Her öğretmen ${MAX_HEALTHY_WEEKLY_HOURS} saat altında`, to: '/assignments', good: overloadedTeachers.length === 0 }]
+  const { profile } = useAuth()
+  const [stats, setStats] = useState({ teachers: 0, courses: 0, branches: 0, constraints: 0 })
+  const [assignments, setAssignments] = useState([])
+  const [courses, setCourses] = useState([])
+  const [teachers, setTeachers] = useState([])
+  const [scheduleCount, setScheduleCount] = useState(0)
+  const [loading, setLoading] = useState(true)
 
-  return <div className="p-4 md:p-8 max-w-[1180px] mx-auto"><PageHeader title={`Merhaba, ${profile?.full_name?.split(' ')[0] || 'Müdür'}`} subtitle={`${formatDate.format(new Date())} · Haftalık programın yayınlama dosyası`} />
-    <section className="border-y-2 border-[#202822] py-7 mb-8"><div className="flex flex-col md:flex-row md:items-end justify-between gap-6"><div><p className="font-mono text-[11px] uppercase tracking-[.14em] text-[#68726b] mb-3">Dosya durumu / 20 Eylül 2026</p><h2 className="text-3xl md:text-5xl font-semibold text-[#202822] max-w-xl leading-[1.03]">{ready ? 'Program yayınlanmaya hazır.' : 'Yayın öncesi kontroller sürüyor.'}</h2><p className="text-[#68726b] text-sm mt-4 max-w-xl leading-relaxed">Bu ekran, okulun haftalık programını öğretmenlerle paylaşmadan önce müdürün kontrol etmesi gereken kayıtları toplar.</p></div><div className="md:text-right"><p className="font-mono text-5xl font-semibold text-[#1f5c4b] tabular-nums">{loading ? '·' : `${totalRequiredHours ? Math.round((placed / totalRequiredHours) * 100) : 0}%`}</p><p className="font-mono text-[11px] uppercase tracking-wider text-[#68726b] mt-1">yerleşim tamamlandı</p></div></div></section>
-    <div className="border-t border-[#cbcfc8]"><div className="grid grid-cols-[1.3fr_.7fr] gap-4 py-4 border-b border-[#cbcfc8] font-mono text-[10px] uppercase tracking-wider text-[#68726b]"><span>Kontrol</span><span>Kanıt</span></div>{checks.map((check, index) => <Link key={check.label} to={check.to} className="grid md:grid-cols-[56px_1.3fr_.7fr_100px] gap-3 items-center py-5 border-b border-[#cbcfc8] hover:bg-[#e1e5dc] transition-colors"><span className="font-mono text-sm text-[#68726b]">0{index + 1}</span><div><p className="font-semibold text-[#202822]">{check.label}</p><p className="text-xs text-[#68726b] mt-1">{check.detail}</p></div><p className="font-mono text-sm text-[#202822]">{check.value}</p><span className={'font-mono text-[10px] uppercase tracking-wider md:text-right ' + (check.good ? 'text-[#1f5c4b]' : 'text-[#a05d25]')}>{check.good ? 'uygun' : 'incele'}</span></Link>)}</div>
-    <div className="grid md:grid-cols-2 gap-6 mt-8"><PageCard title="Okul özeti" description="Sistemde kayıtlı operasyon verisi"><dl className="divide-y divide-[#cbcfc8]">{[['Öğretmen', stats.teachers], ['Ders', stats.courses], ['Şube', stats.branches], ['Müsaitlik kısıtı', stats.constraints]].map(([label, value]) => <div key={label} className="flex justify-between py-3"><dt className="text-sm text-[#68726b]">{label}</dt><dd className="font-mono text-sm font-semibold text-[#202822]">{loading ? '·' : value}</dd></div>)}</dl></PageCard><PageCard title="Sonraki karar" description="Program henüz hazır değilse başla"><p className="text-sm text-[#202822] leading-relaxed">{ready ? 'Programı paylaşmadan önce son görünümü ve PDF çıktısını kontrol et.' : 'Önce program oluşturucuda boş saatleri tamamla. Ardından öğretmen yüklerini ve atamaları tekrar kontrol et.'}</p><Link to={ready ? '/schedule' : '/schedule'} className="inline-block mt-5 font-mono text-xs uppercase tracking-wider text-[#1f5c4b] border-b border-[#1f5c4b] pb-1">Program dosyasını aç →</Link></PageCard></div>
-    <footer className="mt-12 pt-4 border-t border-[#cbcfc8] flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#68726b]"><span>EduShift · Okul operasyon merkezi</span><a href="/terms" className="underline underline-offset-2">Şartlar</a><a href="/privacy" className="underline underline-offset-2">Gizlilik</a></footer>
-  </div>
+  const fetchAll = useCallback(async () => {
+    const results = await Promise.all([
+      supabase.from('teachers').select('id, full_name'),
+      supabase.from('courses').select('id, course_name'),
+      supabase.from('branches').select('*', { count: 'exact', head: true }),
+      supabase.from('teacher_constraints').select('*', { count: 'exact', head: true }),
+      supabase.from('course_assignments').select('id, course_id, teacher_id, weekly_hours'),
+      supabase.from('schedules').select('id', { count: 'exact', head: true }),
+    ])
+    const teacherData = results[0].data || []
+    const courseData = results[1].data || []
+    setTeachers(teacherData)
+    setCourses(courseData)
+    setStats({ teachers: teacherData.length, courses: courseData.length, branches: results[2].count || 0, constraints: results[3].count || 0 })
+    setAssignments(results[4].data || [])
+    setScheduleCount(results[5].count || 0)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchAll)
+  }, [fetchAll])
+
+  const totalRequiredHours = assignments.reduce((sum, assignment) => sum + (assignment.weekly_hours || 0), 0)
+  const placed = Math.min(scheduleCount, totalRequiredHours)
+  const remaining = Math.max(totalRequiredHours - scheduleCount, 0)
+  const assignedCourseIds = new Set(assignments.map((assignment) => assignment.course_id))
+  const coursesWithoutTeacher = courses.filter((course) => !assignedCourseIds.has(course.id))
+  const hoursByTeacher = {}
+  assignments.forEach((assignment) => {
+    hoursByTeacher[assignment.teacher_id] = (hoursByTeacher[assignment.teacher_id] || 0) + (assignment.weekly_hours || 0)
+  })
+  const overloadedTeachers = teachers.filter((teacher) => (hoursByTeacher[teacher.id] || 0) > MAX_HEALTHY_WEEKLY_HOURS)
+  const ready = remaining === 0 && coursesWithoutTeacher.length === 0 && overloadedTeachers.length === 0
+  const completion = totalRequiredHours ? Math.round((placed / totalRequiredHours) * 100) : 0
+  const checks = [
+    { label: 'Ders saatleri yerleşimi', value: remaining === 0 ? 'Tamamlandı' : `${remaining} saat eksik`, detail: `${placed} / ${totalRequiredHours || 0} saat yerleşti`, to: '/schedule', good: remaining === 0 },
+    { label: 'Ders ve öğretmen eşleşmesi', value: coursesWithoutTeacher.length === 0 ? 'Tamamlandı' : `${coursesWithoutTeacher.length} ders eksik`, detail: coursesWithoutTeacher.length ? coursesWithoutTeacher.slice(0, 2).map((course) => course.course_name).join(', ') : 'Tüm derslerin sorumlusu var', to: '/assignments', good: coursesWithoutTeacher.length === 0 },
+    { label: 'Öğretmen haftalık yükü', value: overloadedTeachers.length === 0 ? 'Dengeli' : `${overloadedTeachers.length} kayıt incelenmeli`, detail: overloadedTeachers.length ? overloadedTeachers.slice(0, 2).map((teacher) => teacher.full_name).join(', ') : `Her öğretmen ${MAX_HEALTHY_WEEKLY_HOURS} saat altında`, to: '/assignments', good: overloadedTeachers.length === 0 },
+  ]
+
+  return (
+    <div className="page-canvas">
+      <div className="page-width">
+        <PageHeader title={`Merhaba, ${profile?.full_name?.split(' ')[0] || 'Müdür'}`} subtitle={`${formatDate.format(new Date())} · Haftalık programın yayınlama dosyası`} eyebrow="Çalışma alanı" />
+
+        <section className="dashboard-hero">
+          <div>
+            <p className="section-kicker">Dosya durumu / yayın öncesi kontrol</p>
+            <h2>{ready ? 'Program yayınlanmaya hazır.' : 'Yayın öncesi kontroller sürüyor.'}</h2>
+            <p className="dashboard-hero-copy">Bu ekran, okulun haftalık programını paylaşmadan önce müdürün görmesi gereken eksikleri tek sırada toplar. Her satır seni doğrudan ilgili düzeltmeye götürür.</p>
+          </div>
+          <div className="dashboard-score">
+            <p className="dashboard-score-value">{loading ? '—' : `${completion}%`}</p>
+            <p className="dashboard-score-label">yerleşim tamamlandı</p>
+            <p className="dashboard-score-label">{ready ? 'son kontrol bekliyor' : `${checks.filter((check) => !check.good).length} kontrol açık`}</p>
+          </div>
+        </section>
+
+        <section className="checklist" aria-labelledby="checklist-title">
+          <div className="checklist-head"><span>No.</span><span id="checklist-title">Kontrol</span><span>Kanıt</span><span>Durum</span></div>
+          {checks.map((check, index) => (
+            <Link key={check.label} to={check.to} className="checklist-row">
+              <span className="checklist-number">0{index + 1}</span>
+              <span><span className="checklist-title">{check.label}</span><span className="checklist-detail">{check.detail}</span></span>
+              <span className="checklist-value">{check.value}</span>
+              <span className={'checklist-status ' + (check.good ? 'is-good' : 'is-alert')}>
+                {check.good ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+                {check.good ? 'uygun' : 'incele'}
+              </span>
+            </Link>
+          ))}
+        </section>
+
+        <div className="dashboard-lower">
+          <section className="surface dashboard-panel">
+            <div className="dashboard-panel-head"><div><h2 className="dashboard-panel-title">Okul özeti</h2><p className="dashboard-panel-description">Sistemde kayıtlı operasyon verisi</p></div><CalendarClock size={18} color="var(--brand)" /></div>
+            <dl className="dashboard-list">
+              {[["Öğretmen", stats.teachers], ["Ders", stats.courses], ["Şube", stats.branches], ["Müsaitlik kısıtı", stats.constraints]].map(([label, value]) => <div key={label} className="dashboard-list-row"><dt>{label}</dt><dd>{loading ? '—' : value}</dd></div>)}
+            </dl>
+          </section>
+          <section className="surface dashboard-panel dashboard-next">
+            <div><div className="dashboard-panel-head"><div><h2 className="dashboard-panel-title">Sıradaki karar</h2><p className="dashboard-panel-description">Dosyanın kapanması için önerilen adım</p></div><ArrowUpRight size={18} color="var(--coral)" /></div><p className="dashboard-next-copy">{ready ? 'Programı paylaşmadan önce son görünümü ve PDF çıktısını kontrol et. Hazır olduğunda program oluşturucudan yayına geçebilirsin.' : 'Önce program oluşturucuda boş saatleri tamamla. Ardından atamaları ve öğretmen yüklerini tekrar kontrol et.'}</p></div>
+            <Link to="/schedule" className="text-button">Program dosyasını aç <ArrowUpRight size={14} /></Link>
+          </section>
+        </div>
+
+        <footer className="dashboard-footer"><span>EduShift · Okul operasyon merkezi</span><a href="/terms">Şartlar</a><a href="/privacy">Gizlilik</a></footer>
+      </div>
+    </div>
+  )
 }

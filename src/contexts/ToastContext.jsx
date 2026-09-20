@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback } from 'react'
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from '../components/UiMarks'
 
