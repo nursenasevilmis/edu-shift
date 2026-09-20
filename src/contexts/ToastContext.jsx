@@ -8,7 +8,7 @@ const ICONS = { success: CheckCircle2, error: XCircle, warning: AlertTriangle, i
 const STYLES = {
     success: 'bg-white border-emerald-100 text-emerald-600',
     error: 'bg-white border-rose-100 text-rose-600',
-    warning: 'bg-white border-amber-100 text-amber-600',
+    warning: 'bg-white border-slate-200 text-slate-700',
     info: 'bg-white border-blue-100 text-blue-600',
 }
 

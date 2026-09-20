@@ -79,15 +79,9 @@ export default function TimeSettings() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Zaman ve Parametreler</h1>
-          <p className="text-slate-400 text-sm mt-1">Okul gününün ritmini ve kapasitesini ayarla</p>
-        </div>
-        <span className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-          <span className="w-2 h-2 rounded bg-[#1f5c4b]"></span>
-          Sistem çalışıyor
-        </span>
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Zaman ve Parametreler</h1>
+        <p className="text-slate-400 text-sm mt-1">Okul gününün ritmini ve kapasitesini ayarla</p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">

@@ -7,6 +7,7 @@ import { supabaseAdmin } from '../supabaseAdminClient'
 import { useAuth } from '../contexts/AuthContext'
 import SelectField from '../components/SelectField'
 import { useToast } from '../contexts/ToastContext'
+import PageHeader from '../components/PageHeader'
 
 export default function UserManager() {
   const { profile } = useAuth()
@@ -244,26 +245,11 @@ export default function UserManager() {
   return (
     <div className="p-4 md:p-8">
 
-      {/* ==================================================
-          BAŞLIK
-      ================================================== */}
-
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
-            Kullanıcılar ve Roller
-          </h1>
-
-          <p className="text-slate-400 text-sm mt-1">
-            Erişim seviyelerini ve kullanıcı hesaplarını yönet
-          </p>
-        </div>
-
-        <span className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-          <span className="w-2 h-2 rounded bg-[#1f5c4b]" />
-          Sistem çalışıyor
-        </span>
-      </div>
+      <PageHeader
+        title="Kullanıcılar ve Roller"
+        subtitle="Erişim seviyelerini ve kullanıcı hesaplarını yönet"
+        eyebrow="Yönetim"
+      />
 
       {/* ==================================================
           YENİ HESAP OLUŞTUR
@@ -385,10 +371,10 @@ export default function UserManager() {
             )}
 
             <Button
-              color="primary"
+              color="default"
               type="submit"
               isLoading={loading}
-              className="rounded font-medium"
+              className="primary-button rounded font-bold"
             >
               Kullanıcı Oluştur
             </Button>
@@ -417,7 +403,7 @@ export default function UserManager() {
 
           <ShieldCheck
             size={18}
-            className="text-blue-500"
+            className="text-[#121a2a]"
           />
 
         </div>

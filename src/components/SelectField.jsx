@@ -14,7 +14,7 @@ export default function SelectField({ label, value, onChange, options = [], plac
     <div className={'flex flex-col gap-1.5 ' + className}>
       {label && <span className="text-[10px] font-semibold uppercase tracking-[.1em] text-[var(--muted)]">{label}</span>}
       <Dropdown>
-        <Button variant="secondary" className="w-full min-h-[42px] flex items-center justify-between gap-2 border border-[var(--line-strong)] rounded-[8px] px-3 text-sm bg-[var(--paper-raised)] hover:border-[var(--brand)]">
+        <Button variant="secondary" className="w-full min-h-[42px] flex items-center justify-between gap-2 border border-[var(--line-strong)] rounded-[8px] px-3 text-sm bg-[var(--paper-raised)] hover:border-[#121a2a]">
           <span className={selected ? 'text-[var(--ink)]' : 'text-[var(--muted)]'}>{selected ? selected.label : (placeholder || 'Seç')}</span>
           <ChevronDown size={16} className="text-[var(--muted)] shrink-0" />
         </Button>

@@ -15,7 +15,6 @@ import {
   X,
   ChevronRight,
   LogOut,
-  CircleHelp,
 } from '../components/UiMarks'
 
 const menuGroups = [
@@ -45,17 +44,6 @@ export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const roleLabels = { admin: 'Okul müdürü', editor: 'Editör', teacher: 'Öğretmen' }
   const initials = (profile?.full_name || '?').split(' ').map((word) => word[0]).join('').slice(0, 2).toUpperCase()
-  const pageNames = {
-    '/dashboard': 'Kontrol paneli',
-    '/schedule': 'Program oluşturucu',
-    '/assignments': 'Ders atamaları',
-    '/constraints': 'Öğretmen kısıtları',
-    '/branches': 'Şubeler',
-    '/courses': 'Dersler',
-    '/teachers': 'Öğretmenler',
-    '/users': 'Kullanıcı yönetimi',
-    '/time-settings': 'Zaman ayarları',
-  }
   const items = [...menuGroups]
   if (profile?.role === 'admin') {
     items.push({
@@ -142,17 +130,7 @@ export default function AdminLayout() {
       )}
       <main className="app-main">
         <header className="app-topbar">
-          <div className="topbar-leading">
-            <button onClick={() => setMobileOpen(true)} className="mobile-menu-button md:hidden" aria-label="Menüyü aç"><Menu /></button>
-            <div>
-              <p className="topbar-context">Haftalık planlama / 2026</p>
-              <h1 className="topbar-title">{pageNames[location.pathname] || 'EduShift'}</h1>
-            </div>
-          </div>
-          <div className="topbar-meta">
-            <span className="live-indicator">Canlı veri</span>
-            <button className="topbar-help" title="Yardım" aria-label="Yardım"><CircleHelp /></button>
-          </div>
+          <button onClick={() => setMobileOpen(true)} className="mobile-menu-button md:hidden" aria-label="Menüyü aç"><Menu /></button>
         </header>
         <div className="flex-1 min-w-0 overflow-y-auto"><Outlet /></div>
       </main>
