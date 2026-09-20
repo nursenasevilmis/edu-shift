@@ -387,11 +387,7 @@ export default function ScheduleGrid() {
 
           <section className="surface schedule-grid-panel">
             <div className="schedule-grid-head"><div><h2 className="schedule-panel-title">Haftalık yerleşim</h2><p className="schedule-panel-copy">Bir hücreyi doldurmak için ders havuzundan sürükle. Çakışmalar kaydedilmeden önce engellenir.</p></div><div className="schedule-grid-stat">{fetching ? '—' : `${completion}%`}<span>{placedHours} / {requiredHours || 0} saat</span></div></div>
-<<<<<<< HEAD
-            {fetching ? <div className="h-96 bg-[#f1ede1] rounded animate-pulse mt-4" /> : (
-=======
             {fetching ? <div className="h-96 bg-[#f0f3ee] rounded animate-pulse mt-4" /> : (
->>>>>>> 8c61b95cb7d9861b22360da409415bb8c3f8bd97
               <div className="schedule-table-wrap">
                 <table className="schedule-table">
                   <thead><tr><th>Saat</th>{DAYS.map((day) => <th key={day.value}>{day.label}</th>)}</tr></thead>

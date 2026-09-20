@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-import { useEffect, useMemo, useState } from 'react'
-import { Plus, Pencil, Trash2, Check, X, Search } from '../components/UiMarks'
-=======
 import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, Check, X } from '../components/UiMarks'
->>>>>>> 8c61b95cb7d9861b22360da409415bb8c3f8bd97
 import { supabase } from '../supabaseClient'
 import SelectField from '../components/SelectField'
 import PageHeader from '../components/PageHeader'
@@ -15,7 +10,6 @@ import { useConfirm } from '../contexts/ConfirmContext'
 export default function TeacherManager() {
   const [teachers, setTeachers] = useState([])
   const [branches, setBranches] = useState([])
-  const [query, setQuery] = useState('')
   const [fullName, setFullName] = useState('')
   const [branchId, setBranchId] = useState('')
   const [loading, setLoading] = useState(false)
@@ -125,15 +119,6 @@ export default function TeacherManager() {
     return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
   }
 
-  const filteredTeachers = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase('tr')
-    if (!q) return teachers
-    return teachers.filter((t) =>
-      (t.full_name || '').toLocaleLowerCase('tr').includes(q) ||
-      (t.branches?.name || '').toLocaleLowerCase('tr').includes(q)
-    )
-  }, [teachers, query])
-
   return (
     <div className="p-4 md:p-8">
       <PageHeader title="Öğretmenler" subtitle="Okuldaki tüm öğretmen profillerini buradan yönet" />
@@ -163,18 +148,6 @@ export default function TeacherManager() {
           </button>
         </form>
 
-        {teachers.length > 0 && (
-          <div className="relative mb-5">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="İsim veya şubeye göre ara..."
-              className="w-full border border-slate-200 rounded pl-9 pr-3 py-2 text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        )}
-
         {fetching ? (
           <div className="grid md:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
@@ -185,17 +158,9 @@ export default function TeacherManager() {
           <div className="text-center py-12">
             <p className="text-slate-400 text-sm">Henüz öğretmen eklenmedi</p>
           </div>
-        ) : filteredTeachers.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-slate-400 text-sm">"{query}" ile eşleşen öğretmen bulunamadı</p>
-          </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-3">
-<<<<<<< HEAD
-            {filteredTeachers.map((t, i) => (
-=======
             {teachers.map((t, i) => (
->>>>>>> 8c61b95cb7d9861b22360da409415bb8c3f8bd97
               <div key={t.id} className="flex items-center gap-3 p-4 rounded bg-slate-50 hover:bg-slate-100 transition-colors duration-150">
                 {editingId === t.id ? (
                   <div className="flex-1 flex flex-col gap-1.5 min-w-0">
