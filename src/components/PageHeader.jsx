@@ -6,7 +6,7 @@ export default function PageHeader({ title, subtitle, action, eyebrow }) {
         <h1>{title}</h1>
         {subtitle && <p>{subtitle}</p>}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="page-header-action">{action}</div>}
     </header>
   )
 }

@@ -4,7 +4,7 @@ import { DAYS, computeBlockState } from '../utils/timeUtils'
 import SelectField from '../components/SelectField'
 import { useToast } from '../contexts/ToastContext'
 import { useConfirm } from '../contexts/ConfirmContext'
-import { Wand2, CalendarDays, Trash2, Info } from '../components/UiMarks'
+import { Wand2, Trash2, Info } from '../components/UiMarks'
 import { generateAutoSchedule } from '../utils/autoSchedule'
 
 export default function ScheduleGrid() {
@@ -331,17 +331,13 @@ export default function ScheduleGrid() {
 
   return (
     <div className="page-canvas">
-      <div className="page-width" style={{ maxWidth: '1540px' }}>
-        <div className="flex items-end justify-between gap-4 flex-wrap mb-6">
-          <div>
-            <p className="section-kicker mb-2">Program dosyası / yerleşim</p>
-            <h1 className="text-[32px] md:text-[44px] font-semibold text-[var(--ink)] leading-[.96]">Program oluşturucu</h1>
-            <p className="text-[var(--muted)] text-sm mt-3 max-w-2xl leading-relaxed">Dersleri kurallara uygun boşluklara taşı. Otomatik oluşturucu yerleşimi hızlandırır; son karar her zaman sende kalır.</p>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 text-[10px] font-mono uppercase tracking-[.12em] text-[var(--muted)]"><CalendarDays size={15} color="var(--brand)" /> Haftalık görünüm</div>
+      <div className="page-width schedule-page-width">
+        <div className="schedule-context">
+          <div><p className="section-kicker">Program dosyası / yerleşim</p><h1>Program oluşturucu</h1><p>Ders bloklarını haftalık gridde yerleştir. Kurallar ve çakışmalar kayıt öncesinde kontrol edilir.</p></div>
+          <div className="schedule-context-meta"><span>Yerleşim</span><strong>{fetching ? '—' : `${placedHours}/${requiredHours || 0}`}</strong><small>saat</small></div>
         </div>
 
-        <section className="surface schedule-toolbar mb-4">
+        <section className="schedule-toolbar">
           <div>
             <SelectField label="Çalışılan şube" value={selectedBranch} onChange={setSelectedBranch} className="min-w-[210px]" options={branches.map((branch) => ({ value: branch.id, label: branch.name }))} />
             <p className="schedule-toolbar-note"><Info size={13} /> Dolu hücrelerin içinde kaldırma aksiyonu var; yanlışlıkla silme yok.</p>
@@ -353,7 +349,7 @@ export default function ScheduleGrid() {
         </section>
 
         <div className="schedule-layout">
-          <aside className="surface schedule-source">
+          <aside className="schedule-source">
             <div className="flex items-start justify-between gap-3"><div><h2 className="schedule-panel-title">Ders havuzu</h2><p className="schedule-panel-copy">Kartı sürükleyip tabloya bırak. Bloklar kendi bütünlüğünü korur.</p></div><Info size={16} color="var(--muted)" /></div>
             <div className="assignment-stack">
               {assignments.map((assignment) => {
@@ -385,7 +381,7 @@ export default function ScheduleGrid() {
             </div>
           </aside>
 
-          <section className="surface schedule-grid-panel">
+          <section className="schedule-grid-panel">
             <div className="schedule-grid-head"><div><h2 className="schedule-panel-title">Haftalık yerleşim</h2><p className="schedule-panel-copy">Bir hücreyi doldurmak için ders havuzundan sürükle. Çakışmalar kaydedilmeden önce engellenir.</p></div><div className="schedule-grid-stat">{fetching ? '—' : `${completion}%`}<span>{placedHours} / {requiredHours || 0} saat</span></div></div>
             {fetching ? <div className="h-96 bg-[#f0f3ee] rounded animate-pulse mt-4" /> : (
               <div className="schedule-table-wrap">
