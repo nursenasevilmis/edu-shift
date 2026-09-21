@@ -1,0 +1,66 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import PrivateRoute from './components/PrivateRoute'
+import RoleRedirect from './components/RoleRedirect'
+import AdminLayout from './layouts/AdminLayout'
+import Login from './pages/Login'
+import BranchManager from './pages/BranchManager'
+import CourseManager from './pages/CourseManager'
+import TeacherManager from './pages/TeacherManager'
+import ConstraintCalendar from './pages/ConstraintCalendar'
+import AssignmentManager from './pages/AssignmentManager'
+import ScheduleGrid from './pages/ScheduleGrid'
+import UserManager from './pages/UserManager'
+import TimeSettings from './pages/TimeSettings'
+import Dashboard from './pages/Dashboard'
+import { ToastProvider } from './contexts/ToastContext'
+import { ConfirmProvider } from './contexts/ConfirmContext'
+import ResetPassword from './pages/ResetPassword'
+import LegalPage from './pages/LegalPage'
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/terms" element={<LegalPage type="terms" />} />
+      <Route path="/privacy" element={<LegalPage type="privacy" />} />
+
+      <Route path="/" element={<PrivateRoute><RoleRedirect /></PrivateRoute>} />
+
+      <Route
+        path="/"
+        element={
+          <PrivateRoute>
+            <AdminLayout />
+          </PrivateRoute>
+        }
+      >
+        <Route path="branches" element={<BranchManager />} />
+        <Route path="courses" element={<CourseManager />} />
+        <Route path="teachers" element={<TeacherManager />} />
+        <Route path="constraints" element={<ConstraintCalendar />} />
+        <Route path="assignments" element={<AssignmentManager />} />
+        <Route path="schedule" element={<ScheduleGrid />} />
+        <Route path="users" element={<UserManager />} />
+        <Route path="time-settings" element={<TimeSettings />} />
+        <Route path="dashboard" element={<Dashboard />} />
+      </Route>
+    </Routes>
+  )
+}
+function App() {
+  return (
+    <BrowserRouter>
+      <ToastProvider>
+        <ConfirmProvider>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </ConfirmProvider>
+      </ToastProvider>
+    </BrowserRouter>
+  )
+}
+
+export default App
