@@ -2049,3 +2049,33 @@ code,
 .legal-page footer { display:flex; justify-content:space-between; gap:16px; padding-top:20px; color:var(--muted); font:700 10px/1.4 'Space Mono',monospace; text-transform:uppercase; }
 @media (max-width:900px) { .schedule-layout { grid-template-columns:1fr; } .schedule-source { border-bottom:1px solid var(--line); padding-bottom:18px; } .settings-layout,.profile-layout { grid-template-columns:1fr; } .profile-summary { display:grid; grid-template-columns:52px 1fr; column-gap:16px; align-items:center; } .profile-summary-avatar { grid-row:span 2; margin:0; } .profile-summary h2 { align-self:end; } .profile-summary p { margin:3px 0 0; } .profile-summary span { grid-column:2; } }
 @media (max-width:680px) { .assignment-stats,.user-stats,.settings-overview { grid-template-columns:repeat(2,1fr); } .assignment-form-grid,.user-create-grid,.settings-form-grid { grid-template-columns:1fr; } .assignment-filters,.user-filters { grid-template-columns:1fr; } .assignment-row { grid-template-columns:minmax(0,1fr) 34px; gap:8px; } .assignment-row-branch,.assignment-row-meta { display:none; } .user-row { grid-template-columns:38px minmax(0,1fr); } .user-row-role { grid-column:2; padding-bottom:12px; } .legal-header { margin-top:46px; } .legal-sections section { grid-template-columns:42px 1fr; gap:8px; } .legal-page footer { flex-direction:column; } }
+
+/* Final correction: keep the schedule compact and make forms consistent. */
+.schedule-page-width { max-width:1540px; }
+.schedule-layout { grid-template-columns:238px minmax(0,1fr); gap:20px; }
+.schedule-toolbar { padding:13px 0; }
+.schedule-grid-head { padding-bottom:10px; }
+.schedule-table-wrap { margin-top:11px; }
+.schedule-table { min-width:0; table-layout:auto; }
+.schedule-table th { height:auto; padding:7px 6px; font-size:inherit; }
+.schedule-table th:first-child { width:auto; }
+.schedule-table td { height:74px; padding:5px; }
+.schedule-table td:not(:first-child) { min-width:0; }
+.schedule-cell-entry { min-height:61px; padding:6px 7px; border-left-width:3px; }
+.schedule-cell-entry strong { font-size:12px; }
+.schedule-cell-entry small { margin-top:4px; font-size:10px; }
+.schedule-remove { margin-top:5px; font-size:10px; }
+.assignment-teacher-group { border-bottom:1px solid var(--line); }
+.assignment-teacher-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 0 7px; }
+.assignment-teacher-heading strong { color:var(--ink); font-size:13px; }
+.assignment-teacher-heading span { color:var(--muted); font-size:11px; }
+.assignment-teacher-group .assignment-row { border-bottom:1px solid var(--line); }
+.assignment-teacher-group .assignment-row:last-child { border-bottom:0; }
+.profile-summary { color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:12px; box-shadow:none; }
+.profile-summary-avatar { border-radius:12px; }
+.profile-form input, .settings-form-grid input, .user-create-grid input, .assignment-form-grid input { min-height:44px; height:44px; box-sizing:border-box; }
+.settings-form-grid > label, .assignment-form-grid > label, .user-create-grid > label, .profile-form > label { min-width:0; }
+.settings-form-grid > label:last-child { grid-column:1 / -1; max-width:calc(50% - 10px); }
+.assignment-form-grid > .flex, .user-create-grid > .flex { width:100%; min-width:0; }
+.assignment-form-grid > .flex button, .user-create-grid > .flex button { width:100%; min-height:44px; height:44px; }
+@media (max-width:680px) { .settings-form-grid > label:last-child { grid-column:auto; max-width:none; } }
