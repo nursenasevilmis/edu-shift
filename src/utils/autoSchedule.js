@@ -1,112 +1,147 @@
 import { parseBlockPattern } from './timeUtils'
 
-// Diziyi rastgele karıştırır (her çalıştırmada farklı bir dağılım denesin diye)
-function shuffle(array) {
-  const arr = [...array]
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[arr[i], arr[j]] = [arr[j], arr[i]]
-  }
-  return arr
+function key(teacherId, slotId) {
+  return String(teacherId) + '-' + String(slotId)
 }
 
-// Bir öğretmenin belirli bir slot'ta müsait olup olmadığını kontrol eder
-function isTeacherFree(teacherId, slot, teacherBusyMap, constraints) {
-  const key = teacherId + '-' + slot.id
-  if (teacherBusyMap.has(key)) return false
-
-  const isConstrained = constraints.some((c) => {
-    if (String(c.teacher_id) !== String(teacherId)) return false
-    if (c.day_of_week !== slot.day_of_week) return false
-    const cStart = c.start_time.slice(0, 5)
-    const cEnd = c.end_time.slice(0, 5)
+function isTeacherFree(teacherId, slot, teacherBusySet, constraints) {
+  if (teacherBusySet.has(key(teacherId, slot.id))) return false
+  return !constraints.some((constraint) => {
+    if (String(constraint.teacher_id) !== String(teacherId)) return false
+    if (Number(constraint.day_of_week) !== Number(slot.day_of_week)) return false
+    const start = constraint.start_time.slice(0, 5)
+    const end = constraint.end_time.slice(0, 5)
     const slotStart = slot.start_time.slice(0, 5)
-    return slotStart >= cStart && slotStart < cEnd
+    return slotStart >= start && slotStart < end
   })
-  return !isConstrained
 }
 
-// Verilen gündeki period_number'dan başlayarak `size` kadar ardışık boş slot bulur
-function findConsecutiveSlots(day, startPeriod, size, timeSlotsByDay, branchBusySet, teacherId, teacherBusyMap, constraints) {
-  const daySlots = timeSlotsByDay[day] || []
+function consecutiveSlots(daySlots, startPeriod, size) {
   const slots = []
-  for (let p = startPeriod; p < startPeriod + size; p++) {
-    const slot = daySlots.find((s) => s.period_number === p)
+  for (let period = startPeriod; period < startPeriod + size; period += 1) {
+    const slot = daySlots.find((candidate) => candidate.period_number === period)
     if (!slot) return null
-    if (branchBusySet.has(slot.id)) return null
-    if (!isTeacherFree(teacherId, slot, teacherBusyMap, constraints)) return null
     slots.push(slot)
   }
   return slots
 }
 
+function existingRuns(assignment, branchExistingEntries, slotById) {
+  const entries = branchExistingEntries
+    .filter((entry) => String(entry.assignment_id) === String(assignment.id))
+    .map((entry) => slotById.get(String(entry.time_slot_id)))
+    .filter(Boolean)
+    .sort((a, b) => a.day_of_week - b.day_of_week || a.period_number - b.period_number)
+
+  const runs = []
+  entries.forEach((slot) => {
+    const previous = runs[runs.length - 1]
+    if (previous && previous[previous.length - 1].day_of_week === slot.day_of_week && previous[previous.length - 1].period_number + 1 === slot.period_number) {
+      previous.push(slot)
+    } else {
+      runs.push([slot])
+    }
+  })
+  return runs
+}
+
+function remainingBlocks(assignment, branchExistingEntries, slotById) {
+  const weeklyHours = Math.max(0, Number(assignment.weekly_hours) || 0)
+  const pattern = parseBlockPattern(assignment.block_pattern)
+  const existing = existingRuns(assignment, branchExistingEntries, slotById)
+  const placedHours = existing.reduce((sum, run) => sum + run.length, 0)
+  let blocks = pattern.length > 0 && pattern.reduce((sum, size) => sum + size, 0) <= weeklyHours
+    ? [...pattern]
+    : Array(weeklyHours).fill(1)
+
+  // Match existing contiguous runs to the configured block pattern before generating the remainder.
+  existing.forEach((run) => {
+    const index = blocks.indexOf(run.length)
+    if (index >= 0) blocks.splice(index, 1)
+  })
+
+  const remainingHours = Math.max(0, weeklyHours - placedHours)
+  while (blocks.reduce((sum, size) => sum + size, 0) > remainingHours) {
+    blocks.pop()
+  }
+  while (blocks.reduce((sum, size) => sum + size, 0) < remainingHours) blocks.push(1)
+  return blocks.sort((a, b) => b - a)
+}
+
+function getCandidates({ blockSize, assignment, timeSlotsByDay, branchBusySet, teacherBusySet, constraints, dayLoad }) {
+  const candidates = []
+  Object.entries(timeSlotsByDay).forEach(([day, daySlots]) => {
+    daySlots.forEach((slot) => {
+      const slots = consecutiveSlots(daySlots, slot.period_number, blockSize)
+      if (!slots || slots.some((candidate) => branchBusySet.has(String(candidate.id)))) return
+      if (slots.some((candidate) => !isTeacherFree(assignment.teacher_id, candidate, teacherBusySet, constraints))) return
+      const load = dayLoad.get(`${assignment.id}-${day}`) || 0
+      const teacherDayLoad = dayLoad.get(`teacher-${assignment.teacher_id}-${day}`) || 0
+      candidates.push({
+        slots,
+        score: load * 100 + teacherDayLoad * 10 + Number(day) * 0.1 + slot.period_number * 0.01,
+      })
+    })
+  })
+  return candidates.sort((a, b) => a.score - b.score)
+}
+
 /**
- * assignments: bu subeye ait course_assignments listesi (weekly_hours, block_pattern, teacher_id iceriyor)
- * timeSlots: tum time_slots listesi
- * branchExistingEntries: bu subenin zaten dolu olan schedules kayitlari (time_slot_id listesi)
- * teacherBusyEntries: ilgili ogretmenlerin TUM subelerdeki mevcut kayitlari [{teacher_id, time_slot_id}]
- * constraints: teacher_constraints tablosu
- * days: [{value, label}]
+ * Places all remaining blocks where possible. The search is deterministic and
+ * keeps the most constrained/largest blocks first so it does not waste small
+ * slots before placing a two- or three-period block.
  */
 export function generateAutoSchedule({ assignments, timeSlots, branchExistingEntries, teacherBusyEntries, constraints, days }) {
   const timeSlotsByDay = {}
-  days.forEach((d) => {
-    timeSlotsByDay[d.value] = timeSlots.filter((s) => s.day_of_week === d.value).sort((a, b) => a.period_number - b.period_number)
+  days.forEach((day) => {
+    timeSlotsByDay[day.value] = timeSlots
+      .filter((slot) => Number(slot.day_of_week) === Number(day.value))
+      .sort((a, b) => a.period_number - b.period_number)
   })
 
-  const branchBusySet = new Set(branchExistingEntries.map((e) => e.time_slot_id))
-  const teacherBusyMap = new Map()
-  teacherBusyEntries.forEach((e) => teacherBusyMap.set(e.teacher_id + '-' + e.time_slot_id, true))
+  const slotById = new Map(timeSlots.map((slot) => [String(slot.id), slot]))
+  const branchBusySet = new Set(branchExistingEntries.map((entry) => String(entry.time_slot_id)))
+  const teacherBusySet = new Set(teacherBusyEntries.map((entry) => key(entry.teacher_id, entry.time_slot_id)))
+  const dayLoad = new Map()
+  const blocks = []
 
+  assignments.forEach((assignment) => {
+    remainingBlocks(assignment, branchExistingEntries, slotById).forEach((size, index) => {
+      blocks.push({ assignment, size, index })
+    })
+  })
+
+  blocks.sort((a, b) => b.size - a.size || Number(a.assignment.weekly_hours) - Number(b.assignment.weekly_hours))
   const placements = []
   const unplaced = []
 
-  // Once blok yapisi zorunlu (buyuk) atamalari, sonra tekli saatleri yerlestirmek
-  // basari oranini artirir; buyukten kucuge sirala.
-  const sortedAssignments = [...assignments].sort((a, b) => (b.weekly_hours || 0) - (a.weekly_hours || 0))
+  blocks.forEach(({ assignment, size, index }) => {
+    const candidates = getCandidates({
+      blockSize: size,
+      assignment,
+      timeSlotsByDay,
+      branchBusySet,
+      teacherBusySet,
+      constraints,
+      dayLoad,
+    })
 
-  for (const assignment of sortedAssignments) {
-    const alreadyPlaced = branchExistingEntries.filter((e) => String(e.assignment_id) === String(assignment.id)).length
-    const remainingHours = assignment.weekly_hours - alreadyPlaced
-    if (remainingHours <= 0) continue
-
-    const pattern = parseBlockPattern(assignment.block_pattern)
-    const blocks = pattern.length > 0 ? [...pattern] : Array(remainingHours).fill(1)
-
-    for (const blockSize of blocks) {
-      let placed = false
-      const shuffledDays = shuffle(days)
-
-      for (const day of shuffledDays) {
-        const daySlots = timeSlotsByDay[day.value] || []
-        const startPeriods = shuffle(daySlots.map((s) => s.period_number))
-
-        for (const startPeriod of startPeriods) {
-          const found = findConsecutiveSlots(
-            day.value, startPeriod, blockSize, timeSlotsByDay,
-            branchBusySet, assignment.teacher_id, teacherBusyMap, constraints
-          )
-          if (found) {
-            found.forEach((slot) => {
-              branchBusySet.add(slot.id)
-              teacherBusyMap.set(assignment.teacher_id + '-' + slot.id, true)
-              placements.push({
-                assignment_id: assignment.id,
-                time_slot_id: slot.id,
-              })
-            })
-            placed = true
-            break
-          }
-        }
-        if (placed) break
-      }
-
-      if (!placed) {
-        unplaced.push({ assignment, blockSize })
-      }
+    const chosen = candidates[0]
+    if (!chosen) {
+      unplaced.push({ assignment, blockSize: size, blockIndex: index })
+      return
     }
-  }
+
+    chosen.slots.forEach((slot) => {
+      branchBusySet.add(String(slot.id))
+      teacherBusySet.add(key(assignment.teacher_id, slot.id))
+      placements.push({ assignment_id: assignment.id, time_slot_id: slot.id })
+      const dayKey = `${assignment.id}-${slot.day_of_week}`
+      dayLoad.set(dayKey, (dayLoad.get(dayKey) || 0) + 1)
+      const teacherKey = `teacher-${assignment.teacher_id}-${slot.day_of_week}`
+      dayLoad.set(teacherKey, (dayLoad.get(teacherKey) || 0) + 1)
+    })
+  })
 
   return { placements, unplaced }
 }

@@ -35,6 +35,7 @@ import {
   Book as BookIcon,
   XCircle as XCircleIcon,
   ChevronDown as ChevronDownIcon,
+  RefreshCw as RefreshCwIcon,
 } from 'lucide-react'
 
 function createIcon(Icon) {
@@ -79,3 +80,4 @@ export const Clock = createIcon(ClockIcon)
 export const Book = createIcon(BookIcon)
 export const XCircle = createIcon(XCircleIcon)
 export const ChevronDown = createIcon(ChevronDownIcon)
+export const RefreshCw = createIcon(RefreshCwIcon)

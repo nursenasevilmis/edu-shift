@@ -112,8 +112,8 @@ export default function Login() {
           <div className="auth-mobile-brand"><BrandLockup dark /></div>
           <div className="auth-heading">
             <p className="section-kicker">Çalışma alanına giriş</p>
-            <h2>{mode === 'login' ? 'Tekrar hoş geldin.' : 'Şifreni yenile.'}</h2>
-            <p>{mode === 'login' ? 'Okulunun haftalık program dosyasını kaldığın yerden aç.' : 'Email adresine güvenli bir yenileme bağlantısı göndereceğiz.'}</p>
+            <h2>{mode === 'login' ? 'Çalışma alanına giriş.' : 'Şifreni yenile.'}</h2>
+            <p>{mode === 'login' ? 'Okulunun haftalık programını aç ve günü planlamaya başla.' : 'Email adresine güvenli bir yenileme bağlantısı göndereceğiz.'}</p>
           </div>
 
           {mode === 'login' ? (
