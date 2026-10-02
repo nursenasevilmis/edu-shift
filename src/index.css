@@ -2079,3 +2079,20 @@ code,
 .assignment-form-grid > .flex, .user-create-grid > .flex { width:100%; min-width:0; }
 .assignment-form-grid > .flex button, .user-create-grid > .flex button { width:100%; min-height:44px; height:44px; }
 @media (max-width:680px) { .settings-form-grid > label:last-child { grid-column:auto; max-width:none; } }
+
+/* Assignment accordion and aligned time settings fields */
+.assignment-teacher-group { border-bottom:1px solid var(--line); }
+.assignment-teacher-heading { width:100%; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:17px 0; color:var(--ink); background:transparent; border:0; text-align:left; cursor:pointer; }
+.assignment-teacher-heading > span { display:flex; align-items:center; gap:12px; }
+.assignment-teacher-heading strong { font-size:14px; }
+.assignment-teacher-heading small { color:var(--muted); font-size:11px; font-weight:500; }
+.assignment-teacher-heading b { display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; color:var(--muted); border:1px solid var(--line-strong); border-radius:50%; font-size:17px; font-weight:500; line-height:1; }
+.assignment-teacher-heading:hover { color:var(--cobalt); }
+.assignment-teacher-heading:hover b { color:var(--ink); border-color:var(--cobalt); }
+.assignment-teacher-rows { margin-bottom:4px; padding:0 0 8px 22px; border-left:2px solid #edf2d0; }
+.assignment-teacher-rows .assignment-row { min-height:58px; padding:8px 0 8px 14px; }
+.settings-form-grid { align-items:start; }
+.settings-form-grid > label { min-height:82px; }
+.settings-form-grid > label input { display:block; margin-top:0; }
+.settings-form-grid > label small { display:block; min-height:14px; margin-top:5px; }
+@media (max-width:680px) { .assignment-teacher-heading > span { align-items:flex-start; flex-direction:column; gap:3px; } .assignment-teacher-rows { padding-left:10px; } }
