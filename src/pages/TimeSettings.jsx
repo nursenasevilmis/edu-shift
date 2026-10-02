@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Input } from '@heroui/react'
-import { Clock } from '../components/UiMarks'
 import { supabase } from '../supabaseClient'
 import { syncTimeSlots } from '../utils/syncTimeSlots'
 import { DAYS } from '../utils/timeUtils'
 import { useToast } from '../contexts/ToastContext'
 import { useConfirm } from '../contexts/ConfirmContext'
+import PageHeader from '../components/PageHeader'
+import PageCard from '../components/PageCard'
 
 export default function TimeSettings() {
   const [settings, setSettings] = useState(null)
@@ -17,165 +17,63 @@ export default function TimeSettings() {
   const fetchSettings = useCallback(async () => {
     setFetching(true)
     const { data, error } = await supabase.from('time_settings').select('*').eq('id', 1).single()
-    if (error) console.error(error)
+    if (error) toast.error('Zaman ayarları alınamadı: ' + error.message)
     else setSettings(data)
     setFetching(false)
-  }, [])
+  }, [toast])
 
-  useEffect(() => {
-    void Promise.resolve().then(fetchSettings)
-  }, [fetchSettings])
+  useEffect(() => { void Promise.resolve().then(fetchSettings) }, [fetchSettings])
 
-  function updateField(field, value) {
-    setSettings((prev) => ({ ...prev, [field]: value }))
-  }
+  function updateField(field, value) { setSettings((previous) => ({ ...previous, [field]: value })) }
 
   async function handleSave() {
-    const ok = await confirmDialog({
-      title: 'Zaman ayarlarını güncelle',
-      message: 'Kaydedersen tüm haftalık program saatleri yeniden hesaplanacak. Devam edilsin mi?',
-      confirmLabel: 'Kaydet',
-    })
+    const ok = await confirmDialog({ title: 'Zaman ayarlarını güncelle', message: 'Bu işlem haftalık programdaki tüm saat slotlarını yeniden hesaplar. Mevcut ders yerleşimleri tekrar kontrol edilmelidir. Devam edilsin mi?', confirmLabel: 'Saatleri güncelle' })
     if (!ok) return
-
     setLoading(true)
     try {
-      const { error: updateError } = await supabase
-        .from('time_settings')
-        .update({
-          lesson_start: settings.lesson_start,
-          lesson_duration: Number(settings.lesson_duration),
-          break_duration: Number(settings.break_duration),
-          lunch_duration: Number(settings.lunch_duration),
-          lunch_after_period: Number(settings.lunch_after_period),
-          monday_hours: Number(settings.monday_hours),
-          tuesday_hours: Number(settings.tuesday_hours),
-          wednesday_hours: Number(settings.wednesday_hours),
-          thursday_hours: Number(settings.thursday_hours),
-          friday_hours: Number(settings.friday_hours),
-        })
-        .eq('id', 1)
-
-      if (updateError) throw updateError
-      await syncTimeSlots(settings)
-      toast.success('Ayarlar kaydedildi ve program saatleri güncellendi.')
-    } catch (err) {
-      toast.error('Hata: ' + err.message)
-    }
+      const values = {
+        lesson_start: settings.lesson_start,
+        lesson_duration: Number(settings.lesson_duration),
+        break_duration: Number(settings.break_duration),
+        lunch_duration: Number(settings.lunch_duration),
+        lunch_after_period: Number(settings.lunch_after_period),
+        monday_hours: Number(settings.monday_hours),
+        tuesday_hours: Number(settings.tuesday_hours),
+        wednesday_hours: Number(settings.wednesday_hours),
+        thursday_hours: Number(settings.thursday_hours),
+        friday_hours: Number(settings.friday_hours),
+      }
+      const { error } = await supabase.from('time_settings').update(values).eq('id', 1)
+      if (error) throw error
+      await syncTimeSlots({ ...settings, ...values })
+      toast.success('Zaman ayarları kaydedildi ve saat gridleri güncellendi.')
+    } catch (error) { toast.error('Ayarlar kaydedilemedi: ' + error.message) }
     setLoading(false)
   }
 
-  if (fetching || !settings) {
-    return (
-      <div className="p-4 md:p-8">
-        <div className="h-8 w-56 bg-slate-100 rounded animate-pulse mb-6"></div>
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 h-72 bg-slate-100 rounded animate-pulse"></div>
-          <div className="h-72 bg-slate-100 rounded animate-pulse"></div>
-        </div>
-      </div>
-    )
-  }
+  if (fetching || !settings) return <div className="page-canvas"><div className="page-width settings-loading"><div /><div /><div /></div></div>
 
+  const totalHours = DAYS.reduce((sum, day) => sum + Number(settings[day.key] || 0), 0)
   return (
-    <div className="p-4 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Zaman ve Parametreler</h1>
-        <p className="text-slate-400 text-sm mt-1">Okul gününün ritmini ve kapasitesini ayarla</p>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Sol: gunun ritmi */}
-        <div className="md:col-span-2 bg-white rounded-xl shadow-soft border border-slate-50 p-6">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="font-semibold text-slate-700">Okul Günü Ritmi</h2>
-            <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center">
-              <Clock size={15} className="text-blue-500" />
+    <div className="page-canvas settings-page">
+      <div className="page-width settings-page-width">
+        <PageHeader title="Zaman ayarları" subtitle="Okul gününün saat düzenini ve haftalık kapasitesini yönet" eyebrow="Yönetim / çalışma düzeni" action={<button type="button" className="primary-button" onClick={handleSave} disabled={loading}>{loading ? 'Güncelleniyor...' : 'Ayarları kaydet'}</button>} />
+        <div className="settings-overview"><div><span>İlk ders</span><strong>{settings.lesson_start?.slice(0, 5)}</strong></div><div><span>Ders süresi</span><strong>{settings.lesson_duration} dk</strong></div><div><span>Haftalık kapasite</span><strong>{totalHours} saat</strong></div><div><span>Öğle arası</span><strong>{settings.lunch_duration} dk</strong></div></div>
+        <div className="settings-layout">
+          <PageCard title="Günün ritmi" description="Her ders slotu bu temel zaman kurallarına göre üretilir.">
+            <div className="settings-form-grid">
+              <label>İlk ders başlangıcı<input type="time" value={settings.lesson_start?.slice(0, 5)} onChange={(event) => updateField('lesson_start', event.target.value)} /></label>
+              <label>Ders süresi<input type="number" min="1" value={settings.lesson_duration} onChange={(event) => updateField('lesson_duration', event.target.value)} /><small>dakika</small></label>
+              <label>Kısa teneffüs<input type="number" min="0" value={settings.break_duration} onChange={(event) => updateField('break_duration', event.target.value)} /><small>dakika</small></label>
+              <label>Öğle arası<input type="number" min="0" value={settings.lunch_duration} onChange={(event) => updateField('lunch_duration', event.target.value)} /><small>dakika</small></label>
+              <label>Öğle arası konumu<input type="number" min="1" value={settings.lunch_after_period} onChange={(event) => updateField('lunch_after_period', event.target.value)} /><small>kaçıncı dersten sonra</small></label>
             </div>
-          </div>
-          <p className="text-xs text-slate-400 mb-5">Parametreler her program doğrulamasında uygulanır</p>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">İlk Ders Başlangıcı</label>
-              <Input
-                type="time"
-                value={settings.lesson_start?.slice(0, 5)}
-                onChange={(e) => updateField('lesson_start', e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Ders Süresi (dakika)</label>
-              <Input
-                type="number"
-                placeholder="örn: 40"
-                value={settings.lesson_duration}
-                onChange={(e) => updateField('lesson_duration', e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Kısa Teneffüs (dakika)</label>
-              <Input
-                type="number"
-                placeholder="örn: 10"
-                value={settings.break_duration}
-                onChange={(e) => updateField('break_duration', e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-500">Öğle Arası (dakika)</label>
-              <Input
-                type="number"
-                placeholder="örn: 45"
-                value={settings.lunch_duration}
-                onChange={(e) => updateField('lunch_duration', e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5 col-span-2">
-              <label className="text-xs font-medium text-slate-500">Öğle Arası Kaçıncı Dersten Sonra</label>
-              <Input
-                type="number"
-                placeholder="örn: 5"
-                value={settings.lunch_after_period}
-                onChange={(e) => updateField('lunch_after_period', e.target.value)}
-                className="max-w-[200px]"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-50">
-            <p className="text-xs text-slate-400">Değişiklikler blok yerleştirilmeden önce uygulanır</p>
-            <Button color="primary" onClick={handleSave} isLoading={loading} className="rounded font-medium">
-              Ritmi Kaydet
-            </Button>
-          </div>
+          </PageCard>
+          <PageCard title="Haftalık kapasite" description="Her gün için üretilecek maksimum ders slotunu belirle.">
+            <div className="capacity-list">{DAYS.map((day) => <label key={day.key}><span><strong>{day.label}</strong><small>{settings.lesson_start?.slice(0, 5)} başlangıç</small></span><input type="number" min="0" max="15" value={settings[day.key]} onChange={(event) => updateField(day.key, event.target.value)} /><em>saat</em></label>)}</div>
+          </PageCard>
         </div>
-
-        {/* Sag: gunluk kapasite */}
-        <div className="bg-white rounded-xl shadow-soft border border-slate-50 p-6">
-          <h2 className="font-semibold text-slate-700 mb-1">Günlük Kapasite</h2>
-          <p className="text-xs text-slate-400 mb-5">Her okul günü için maksimum ders saati</p>
-
-          <div className="flex flex-col gap-3">
-            {DAYS.map((day) => (
-              <div key={day.key} className="flex items-center justify-between p-3 rounded bg-slate-50">
-                <div>
-                  <p className="text-sm font-medium text-slate-700">{day.label}</p>
-                  <p className="text-xs text-slate-400">{settings.lesson_start?.slice(0, 5)} başlangıç</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={settings[day.key]}
-                    onChange={(e) => updateField(day.key, e.target.value)}
-                    className="w-16"
-                  />
-                  <span className="text-xs text-slate-400">saat</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <div className="settings-warning"><strong>Program etkisi</strong><span>Saat ayarlarını değiştirmek, yeni oluşturulacak gridin slotlarını günceller. Yayınlanmış bir program varsa değişiklikten sonra yerleşimleri kontrol et.</span></div>
       </div>
     </div>
   )

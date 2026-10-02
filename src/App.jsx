@@ -17,6 +17,7 @@ import { ToastProvider } from './contexts/ToastContext'
 import { ConfirmProvider } from './contexts/ConfirmContext'
 import ResetPassword from './pages/ResetPassword'
 import LegalPage from './pages/LegalPage'
+import ProfilePage from './pages/ProfilePage'
 
 function AppRoutes() {
   return (
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Route path="schedule" element={<ScheduleGrid />} />
         <Route path="users" element={<UserManager />} />
         <Route path="time-settings" element={<TimeSettings />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route path="dashboard" element={<Dashboard />} />
       </Route>
     </Routes>

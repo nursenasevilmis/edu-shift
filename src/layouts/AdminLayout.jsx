@@ -97,7 +97,7 @@ export default function AdminLayout() {
         ))}
       </nav>
       <div className="sidebar-footer">
-        <div className={'profile-row ' + (collapsed ? 'justify-center' : '')}>
+        <Link to="/profile" className={'profile-row profile-link ' + (collapsed ? 'justify-center' : '')} title="Profilini aç">
           <span className="profile-avatar">{initials}</span>
           {!collapsed && (
             <span className="min-w-0">
@@ -105,7 +105,7 @@ export default function AdminLayout() {
               <p className="profile-role">{roleLabels[profile?.role] || profile?.role}</p>
             </span>
           )}
-        </div>
+        </Link>
         <button onClick={signOut} title="Çıkış yap" className={'sign-out ' + (collapsed ? 'w-full justify-center' : '')}>
           <LogOut />
           {!collapsed && 'Çıkış yap'}
